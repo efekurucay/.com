@@ -1,0 +1,11 @@
+.chatForm {
+  padding: var(--space-s);
+  border: 1px solid var(--color-border-neutral-default);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  transition: border-color 0.2s;
+}
+
+.chatForm:focus-within {
+  border-color: var(--color-border-brand-default);
+} 

@@ -3,11 +3,12 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Fade, Flex, Line, ToggleButton } from "@once-ui-system/core";
+import { Fade, Flex, Line, ToggleButton } from "@/once-ui/components";
+import styles from "@/components/Header.module.scss";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
-import { routes, display, person, about, blog, work, gallery } from "@/resources";
-import { ThemeToggle } from "./ThemeToggle";
-import styles from "./Header.module.scss";
+import { routes, display } from "@/app/resources";
+import { person, home, about, blog, work, gallery, chat, contact } from "@/app/resources/content";
 
 type TimeDisplayProps = {
   timeZone: string;
@@ -51,33 +52,32 @@ export const Header = () => {
       <Fade show="s" fillWidth position="fixed" bottom="0" to="top" height="80" zIndex={9} />
       <Flex
         fitHeight
-        position="unset"
         className={styles.position}
         as="header"
         zIndex={9}
         fillWidth
         padding="8"
         horizontal="center"
-        data-border="rounded"
       >
         <Flex paddingLeft="12" fillWidth vertical="center" textVariant="body-default-s">
-          {display.location && <Flex hide="s">{person.location}</Flex>}
+         {/* {display.location && <Flex hide="s">{person.location}</Flex>} Sol üstte Lokasyon gösterilmesi icin.*/ }
         </Flex>
+
+        
         <Flex fillWidth horizontal="center">
           <Flex
-            background="page"
-            border="neutral-alpha-weak"
+            background="surface"
+            border="neutral-medium"
             radius="m-4"
             shadow="l"
             padding="4"
             horizontal="center"
-            zIndex={1}
           >
-            <Flex gap="4" vertical="center" textVariant="body-default-s" suppressHydrationWarning>
+            <Flex gap="4" vertical="center" textVariant="body-default-s">
               {routes["/"] && (
                 <ToggleButton prefixIcon="home" href="/" selected={pathname === "/"} />
               )}
-              <Line background="neutral-alpha-medium" vert maxHeight="24" />
+              <Line vert maxHeight="24" />
               {routes["/about"] && (
                 <>
                   <ToggleButton
@@ -146,12 +146,42 @@ export const Header = () => {
                   />
                 </>
               )}
-              {display.themeSwitcher && (
+              {routes["/chat"] && (
                 <>
-                  <Line background="neutral-alpha-medium" vert maxHeight="24" />
-                  <ThemeToggle />
+                  <ToggleButton
+                    className="s-flex-hide"
+                    prefixIcon="brain"
+                    href="/chat"
+                    label={chat.label}
+                    selected={pathname.startsWith("/chat")}
+                  />
+                  <ToggleButton
+                    className="s-flex-show"
+                    prefixIcon="brain"
+                    href="/chat"
+                    selected={pathname.startsWith("/chat")}
+                  />
                 </>
               )}
+              {routes["/contact"] && (
+                <>
+                  <ToggleButton
+                    className="s-flex-hide"
+                    prefixIcon="email"
+                    href="/contact"
+                    label={contact.label}
+                    selected={pathname.startsWith("/contact")}
+                  />
+                  <ToggleButton
+                    className="s-flex-show"
+                    prefixIcon="email"
+                    href="/contact"
+                    selected={pathname.startsWith("/contact")}
+                  />
+                </>
+              )}
+              <Line vert maxHeight="24" />
+              <ThemeSwitcher />
             </Flex>
           </Flex>
         </Flex>

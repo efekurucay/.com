@@ -1,0 +1,29 @@
+.responsiveFlex {
+  display: flex;
+  gap: var(--space-xl);
+  width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+.headline {
+  @media (max-width: 768px) {
+    font-size: var(--font-size-display-s) !important;
+  }
+}
+
+.subline {
+  @media (max-width: 768px) {
+    font-size: var(--font-size-heading-l) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsiveFlex {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+} 

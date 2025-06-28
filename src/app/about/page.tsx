@@ -6,25 +6,42 @@ import {
   Heading,
   Icon,
   IconButton,
-  Media,
+  SmartImage,
   Tag,
   Text,
-  Meta,
-  Schema
-} from "@once-ui-system/core";
-import { baseURL, about, person, social } from "@/resources";
+} from "@/once-ui/components";
+import { baseURL } from "@/app/resources";
 import TableOfContents from "@/components/about/TableOfContents";
 import styles from "@/components/about/about.module.scss";
-import React from "react";
+import { person, about, social } from "@/app/resources/content";
 
 export async function generateMetadata() {
-  return Meta.generate({
-    title: about.title,
-    description: about.description,
-    baseURL: baseURL,
-    image: `/api/og/generate?title=${encodeURIComponent(about.title)}`,
-    path: about.path,
-  });
+  const title = about.title;
+  const description = about.description;
+  const ogImage = `https://${baseURL}/og?title=${encodeURIComponent(title)}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `https://${baseURL}/about`,
+      images: [
+        {
+          url: ogImage,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
 }
 
 export default function About() {
@@ -40,6 +57,11 @@ export default function About() {
       items: about.work.experiences.map((experience) => experience.company),
     },
     {
+      title: about.organizations.title,
+      display: about.organizations.display,
+      items: about.organizations.experiences.map((experience) => experience.company),
+    },
+    {
       title: about.studies.title,
       display: about.studies.display,
       items: about.studies.institutions.map((institution) => institution.name),
@@ -47,22 +69,33 @@ export default function About() {
     {
       title: about.technical.title,
       display: about.technical.display,
-      items: about.technical.skills.map((skill) => skill.title),
+      items: about.technical.skills.map((experience) => experience.title),
     },
+
+  
   ];
   return (
     <Column maxWidth="m">
-      <Schema
-        as="webPage"
-        baseURL={baseURL}
-        title={about.title}
-        description={about.description}
-        path={about.path}
-        image={`/api/og/generate?title=${encodeURIComponent(about.title)}`}
-        author={{
-          name: person.name,
-          url: `${baseURL}${about.path}`,
-          image: `${baseURL}${person.avatar}`,
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: person.name,
+            jobTitle: person.role,
+            description: about.intro.description,
+            url: `https://${baseURL}/about`,
+            image: `${baseURL}/images/${person.avatar}`,
+            sameAs: social
+              .filter((item) => item.link && !item.link.startsWith("mailto:")) // Filter out empty links and email links
+              .map((item) => item.link),
+            worksFor: {
+              "@type": "Organization",
+              name: about.work.experiences[0].company || "",
+            },
+          }),
         }}
       />
       {about.tableOfContent.display && (
@@ -81,7 +114,6 @@ export default function About() {
         {about.avatar.display && (
           <Column
             className={styles.avatar}
-            position="sticky"
             minWidth="160"
             paddingX="l"
             paddingBottom="xl"
@@ -97,7 +129,7 @@ export default function About() {
             {person.languages.length > 0 && (
               <Flex wrap gap="8">
                 {person.languages.map((language, index) => (
-                  <Tag key={language} size="l">
+                  <Tag key={index} size="l">
                     {language}
                   </Tag>
                 ))}
@@ -149,11 +181,11 @@ export default function About() {
               {person.role}
             </Text>
             {social.length > 0 && (
-              <Flex className={styles.blockAlign} paddingTop="20" paddingBottom="8" gap="8" wrap horizontal="center" fitWidth data-border="rounded">
+              <Flex className={styles.blockAlign} paddingTop="20" paddingBottom="8" gap="8" wrap horizontal="center" fitWidth>
                 {social.map(
                   (item) =>
                     item.link && (
-                        <React.Fragment key={item.name}>
+                        <>
                             <Button
                                 className="s-flex-hide"
                                 key={item.name}
@@ -161,7 +193,6 @@ export default function About() {
                                 prefixIcon={item.icon}
                                 label={item.name}
                                 size="s"
-                                weight="default"
                                 variant="secondary"
                             />
                             <IconButton
@@ -172,7 +203,7 @@ export default function About() {
                                 icon={item.icon}
                                 variant="secondary"
                             />
-                        </React.Fragment>
+                        </>
                     ),
                 )}
               </Flex>
@@ -216,7 +247,7 @@ export default function About() {
                       ))}
                     </Column>
                     {experience.images.length > 0 && (
-                      <Flex fillWidth paddingTop="m" paddingLeft="40" gap="12" wrap>
+                      <Flex fillWidth paddingTop="m" paddingLeft="40" wrap>
                         {experience.images.map((image, index) => (
                           <Flex
                             key={index}
@@ -227,7 +258,7 @@ export default function About() {
                             //@ts-ignore
                             height={image.height}
                           >
-                            <Media
+                            <SmartImage
                               enlarge
                               radius="m"
                               //@ts-ignore
@@ -241,6 +272,42 @@ export default function About() {
                         ))}
                       </Flex>
                     )}
+                  </Column>
+                ))}
+              </Column>
+            </>
+          )}
+
+          {about.organizations.display && (
+            <>
+              <Heading as="h2" id={about.organizations.title} variant="display-strong-s" marginBottom="m">
+                {about.organizations.title}
+              </Heading>
+              <Column fillWidth gap="l" marginBottom="40">
+                {about.organizations.experiences.map((experience, index) => (
+                  <Column key={`${experience.company}-${experience.role}-${index}`} fillWidth>
+                    <Flex fillWidth horizontal="space-between" vertical="end" marginBottom="4">
+                      <Text id={experience.company} variant="heading-strong-l">
+                        {experience.company}
+                      </Text>
+                      <Text variant="heading-default-xs" onBackground="neutral-weak">
+                        {experience.timeframe}
+                      </Text>
+                    </Flex>
+                    <Text variant="body-default-s" onBackground="brand-weak" marginBottom="m">
+                      {experience.role}
+                    </Text>
+                    <Column as="ul" gap="16">
+                      {experience.achievements.map((achievement: JSX.Element, index: number) => (
+                        <Text
+                          as="li"
+                          variant="body-default-m"
+                          key={`${experience.company}-${index}`}
+                        >
+                          {achievement}
+                        </Text>
+                      ))}
+                    </Column>
                   </Column>
                 ))}
               </Column>
@@ -280,7 +347,7 @@ export default function About() {
               <Column fillWidth gap="l">
                 {about.technical.skills.map((skill, index) => (
                   <Column key={`${skill}-${index}`} fillWidth gap="4">
-                    <Text id={skill.title} variant="heading-strong-l">{skill.title}</Text>
+                    <Text variant="heading-strong-l">{skill.title}</Text>
                     <Text variant="body-default-m" onBackground="neutral-weak">
                       {skill.description}
                     </Text>
@@ -296,7 +363,7 @@ export default function About() {
                             //@ts-ignore
                             height={image.height}
                           >
-                            <Media
+                            <SmartImage
                               enlarge
                               radius="m"
                               //@ts-ignore
