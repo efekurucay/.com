@@ -1,6 +1,5 @@
 .git
 .next/cache
 node_modules/
-public/images/
 .env.local
 README.md 

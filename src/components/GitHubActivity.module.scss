@@ -38,9 +38,8 @@
 .message {
   font-family: var(--font-family-mono);
   color: var(--color-text-neutral-medium);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .time {
