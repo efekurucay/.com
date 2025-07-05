@@ -68,9 +68,14 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
           }),
         }}
       />
+      
       <div style={{ position: "relative" }}>
         <Grid ref={containerRef} columns="5" mobileColumns="1" fillWidth gap="m" style={{ marginBottom: "var(--space-l)"}}>
-          {/* Spotify Card */}
+         
+
+       
+
+          {/* Spotify Card */} 
           <Flex ref={card1Ref} direction="column" gap="s" padding="m" radius="l" background="surface" border="neutral-alpha-medium" style={{zIndex: 1}}>
             <Text variant="label-strong-s" onBackground="neutral-weak">
               Now playing
@@ -180,6 +185,7 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
                   )}
                   {about.title}
                 </Flex>
+                
               </Button>
             </RevealFx>
           </Column>
