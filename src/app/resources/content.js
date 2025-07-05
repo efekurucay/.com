@@ -8,7 +8,7 @@ const person = {
   },
   role: "AI Powered Software Developer",
   avatar: "/images/avatar.jpg",
-  location: "Europe/Istanbul", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
+  //location: "Europe/Istanbul", // Expecting the IANA time zone identifier, e.g., 'Europe/Vienna'
   languages: [], // optional: Leave the array empty if you don't want to display languages
 };
 
@@ -56,12 +56,11 @@ const home = {
   description: `Portfolio website showcasing my work as a ${person.role}`,
   headline: <>Yahya Efe Kuruçay</>,
   subline: (
-    <>
-     <br />
-    
-
-    I am a Computer Science & Engineering student with a passion for creating innovative solutions through technology. My focus areas 
-    include <InlineCode>Software Engineering</InlineCode>, Artificial Intelligence, and Full-Stack Development.
+    <>    
+I am Yahya Efe Kuruçay, a creative and inquisitive Computer Science & Engineering student who thrives on generating innovative ideas and shaping them into impactful technologies. My focus areas include <InlineCode>Software Engineering</InlineCode>, <InlineCode>Artificial Intelligence</InlineCode>, and <InlineCode>Full-Stack Development</InlineCode>. I’m not just coding—I’m envisioning solutions that address real challenges. I enjoy questioning norms, exploring new perspectives, and crafting scalable systems rooted in practicality. Passionate about bridging imagination and execution, I aim to develop technologies that inspire, empower, and transform our future.
+    <br />
+    <br />
+    I am always open to new opportunities and collaborations. If you have a project in mind or just want to connect, feel free to reach out via my social media links or email.
     </>
   ),
 };
