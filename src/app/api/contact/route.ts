@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Resend } from 'resend';
+import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +14,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
 
-    // Add a new document with a generated id to the "contacts" collection
+    // Current timestamp for display
+    const currentTime = new Date().toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // 1. Save to Firebase
     await addDoc(collection(db, "contacts"), {
       name: name,
       email: email,
@@ -18,10 +32,36 @@ export async function POST(req: NextRequest) {
       createdAt: serverTimestamp(),
     });
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    // 2. Send email notification
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Portfolio Contact <noreply@efekurucay.com>', // Verified domain
+      to: ['contact@efekurucay.com'], // ← İstediğiniz email adresi
+      subject: `📧${name}`,
+      react: ContactEmailTemplate({
+        name: name,
+        email: email,
+        message: message,
+        timestamp: currentTime
+      }),
+    });
+
+    if (emailError) {
+      console.error('Email sending failed:', emailError);
+      // Email hatası olsa da form başarılı sayılır (Firebase'a kaydedildi)
+      return NextResponse.json({ 
+        success: true, 
+        warning: "Message saved but email notification failed"
+      }, { status: 200 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      emailSent: true,
+      emailId: emailData?.id
+    }, { status: 200 });
 
   } catch (error) {
-    console.error("Error saving contact message:", error);
-    return NextResponse.json({ error: "Failed to save message." }, { status: 500 });
+    console.error("Error in contact API:", error);
+    return NextResponse.json({ error: "Failed to process contact form." }, { status: 500 });
   }
 } 

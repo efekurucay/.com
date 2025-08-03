@@ -39,6 +39,7 @@
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-html": "^16.0.1",
+    "resend": "^4.7.0",
     "sass": "^1.77.6",
     "save-dev": "^0.0.1-security",
     "sharp": "^0.33.4",

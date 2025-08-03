@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getPortfolioContext } from "@/lib/context";
+import { Resend } from 'resend';
+import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
 
 // Define a type for the chat history messages for better type safety
 type HistoryMessage = {
@@ -30,19 +32,61 @@ const tools: any = [{
 
 // --- Tool Executor ---
 // This function runs when the AI decides to use the tool.
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 async function saveContactMessage(name: string, email: string, message: string) {
   try {
+    // Current timestamp for display
+    const currentTime = new Date().toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // 1. Save to Firebase
     const contactDocRef = doc(db, "contacts", email + "_" + Date.now());
     await setDoc(contactDocRef, {
       name,
       email,
       message,
+      source: "ai_chat", // AI chat'ten geldiğini belirtmek için
       createdAt: serverTimestamp(),
     });
-    return { success: true, message: "Mesaj başarıyla kaydedildi." };
+
+    // 2. Send email notification (same as contact form)
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Portfolio AI Chat <noreply@efekurucay.com>', // AI chat'ten geldiğini belirtmek için
+      to: ['contact@efekurucay.com'],
+      subject: `🤖 AI Chat Mesajı - ${name}`,
+      react: ContactEmailTemplate({
+        name: name,
+        email: email,
+        message: `[AI Chat üzerinden gönderildi]\n\n${message}`,
+        timestamp: currentTime
+      }),
+    });
+
+    if (emailError) {
+      console.error('Email sending failed in AI chat:', emailError);
+      // Email hatası olsa da başarılı sayılır (Firebase'a kaydedildi)
+      return { 
+        success: true, 
+        message: "Mesaj başarıyla kaydedildi ve Yahya Efe'ye bildirim gönderildi." 
+      };
+    }
+
+    return { 
+      success: true, 
+      message: "Mesaj başarıyla kaydedildi ve Yahya Efe'ye email bildirimi gönderildi.",
+      emailId: emailData?.id
+    };
+
   } catch (error) {
-    console.error("Error saving contact message to Firestore:", error);
-    return { success: false, message: "Mesaj veritabanına kaydedilirken bir hata oluştu." };
+    console.error("Error saving contact message from AI chat:", error);
+    return { success: false, message: "Mesaj kaydedilirken bir hata oluştu." };
   }
 }
 
