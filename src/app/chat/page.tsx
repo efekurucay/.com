@@ -211,7 +211,7 @@ function Chat() {
             disabled={isLoading}
           />
         </Flex>
-        <Button type="submit" label="↑"  aria-label="Send" prefixIcon="arrowUp" disabled={isLoading} />
+        <Button type="submit" label="↑"  aria-label="Send" prefixIcon="chevronUp" disabled={isLoading} />
       </Flex> 
     </Column>
   );
