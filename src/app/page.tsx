@@ -76,7 +76,7 @@ export default async function Home() {
   if (!latestProject) {
     try {
       const projects = getPosts(["src", "app", "work", "projects"]);
-      if (projects.length > 0) {
+      if (projects && projects.length > 0) {
         latestProject = { ...projects[0].metadata, slug: projects[0].slug };
       }
     } catch { }
@@ -85,7 +85,7 @@ export default async function Home() {
   if (!latestPost) {
     try {
       const posts = getPosts(["src", "app", "blog", "posts"]);
-      if (posts.length > 0) {
+      if (posts && posts.length > 0) {
         latestPost = { ...posts[0].metadata, slug: posts[0].slug };
       }
     } catch { }
