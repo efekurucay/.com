@@ -1,5 +1,3 @@
-@use "../breakpoints.scss" as breakpoints;
-
 .hover {
     transition: var(--transition-micro-medium);
 
@@ -8,7 +6,17 @@
     }
 }
 
-@media (max-width: breakpoints.$s) {
+.avatar {
+    position: sticky;
+    height: fit-content;
+    top: var(--static-space-64);
+}
+
+@media (--s) {
+    .avatar {
+        top: auto;
+    }
+
     .textAlign {
         text-align: center;
     }

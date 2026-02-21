@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./ProjectCard.module.scss";
 import {
   AvatarGroup,
   Carousel,
@@ -8,7 +9,7 @@ import {
   Heading,
   SmartLink,
   Text,
-} from "@once-ui-system/core";
+} from "@/once-ui/components";
 
 interface ProjectCardProps {
   href: string;
@@ -18,7 +19,6 @@ interface ProjectCardProps {
   content: string;
   description: string;
   avatars: { src: string }[];
-  link: string;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -28,19 +28,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   content,
   description,
   avatars,
-  link,
 }) => {
   return (
-    <Column fillWidth gap="m">
-      <Carousel
-        sizes="(max-width: 960px) 100vw, 960px"
-        items={images.map((image) => ({
-          slide: image,
-          alt: title,
-        }))}
-      />
+    <Column fillWidth gap="m" className={styles.card}>
+      <Flex style={{ maxHeight: "200px", overflow: "hidden", borderRadius: "var(--radius-l)" }}>
+        <Carousel
+          sizes="(max-width: 960px) 100vw, 960px"
+          images={images.map((image) => ({
+            src: image,
+            alt: title,
+          }))}
+        />
+      </Flex>
       <Flex
-        s={{ direction: "column" }}
+        mobileDirection="column"
         fillWidth
         paddingX="s"
         paddingTop="12"
@@ -70,15 +71,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   href={href}
                 >
                   <Text variant="body-default-s">Read case study</Text>
-                </SmartLink>
-              )}
-              {link && (
-                <SmartLink
-                  suffixIcon="arrowUpRightFromSquare"
-                  style={{ margin: "0", width: "fit-content" }}
-                  href={link}
-                >
-                  <Text variant="body-default-s">View project</Text>
                 </SmartLink>
               )}
             </Flex>

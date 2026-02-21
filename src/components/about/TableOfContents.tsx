@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Column, Flex, Text } from "@once-ui-system/core";
+import { Column, Flex, Text } from "@/once-ui/components";
 import styles from "./about.module.scss";
 
 interface TableOfContentsProps {
@@ -45,7 +45,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ structure, about }) =
       position="fixed"
       paddingLeft="24"
       gap="32"
-      m={{ hide: true }}
+      hide="m"
     >
       {structure
         .filter((section) => section.display)
@@ -65,7 +65,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ structure, about }) =
               <>
                 {section.items.map((item, itemIndex) => (
                   <Flex
-                    l={{ hide: true }}
+                    hide="l"
                     key={itemIndex}
                     style={{ cursor: "pointer" }}
                     className={styles.hover}

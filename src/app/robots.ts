@@ -1,4 +1,4 @@
-import { baseURL } from "@/resources";
+import { baseURL } from "@/app/resources";
 
 export default function robots() {
   return {

@@ -1,0 +1,6 @@
+.git
+.next/cache
+node_modules/
+.env.local
+README.md 
+.env

@@ -1,63 +1,57 @@
 "use client";
 
-import { Card, Column, Media, Row, Avatar, Text } from "@once-ui-system/core";
-import { formatDate } from "@/utils/formatDate";
-import { person } from "@/resources";
+import { Column, Flex, Heading, SmartImage, SmartLink, Tag, Text } from "@/once-ui/components";
+import styles from "./Posts.module.scss";
+import { formatDate } from "@/app/utils/formatDate";
 
 interface PostProps {
   post: any;
   thumbnail: boolean;
-  direction?: "row" | "column";
 }
 
-export default function Post({ post, thumbnail, direction }: PostProps) {
+export default function Post({ post, thumbnail }: PostProps) {
   return (
-    <Card
+    <SmartLink
       fillWidth
+      className={styles.hover}
+      unstyled
       key={post.slug}
       href={`/blog/${post.slug}`}
-      transition="micro-medium"
-      direction={direction}
-      border="transparent"
-      background="transparent"
-      padding="4"
-      radius="l-4"
-      gap={direction === "column" ? undefined : "24"}
-      s={{ direction: "column" }}
     >
-      {post.metadata.image && thumbnail && (
-        <Media
-          priority
-          sizes="(max-width: 768px) 100vw, 640px"
-          border="neutral-alpha-weak"
-          cursor="interactive"
-          radius="l"
-          src={post.metadata.image}
-          alt={"Thumbnail of " + post.metadata.title}
-          aspectRatio="16 / 9"
-        />
-      )}
-      <Row fillWidth>
-        <Column maxWidth={28} paddingY="24" paddingX="l" gap="20" vertical="center">
-          <Row gap="24" vertical="center">
-            <Row vertical="center" gap="16">
-              <Avatar src={person.avatar} size="s" />
-              <Text variant="label-default-s">{person.name}</Text>
-            </Row>
-            <Text variant="body-default-xs" onBackground="neutral-weak">
-              {formatDate(post.metadata.publishedAt, false)}
-            </Text>
-          </Row>
-          <Text variant="heading-strong-l" wrap="balance">
+      <Flex
+        position="relative"
+        mobileDirection="column"
+        fillWidth
+        paddingY="12"
+        paddingX="16"
+        gap="32"
+      >
+        {post.metadata.image && thumbnail && (
+          <SmartImage
+            priority
+            maxWidth={20}
+            className={styles.image}
+            sizes="640px"
+            border="neutral-alpha-weak"
+            cursor="interactive"
+            radius="m"
+            src={post.metadata.image}
+            alt={"Thumbnail of " + post.metadata.title}
+            aspectRatio="16 / 9"
+          />
+        )}
+        <Column position="relative" fillWidth gap="8" vertical="center">
+          <Heading as="h2" variant="heading-strong-l" wrap="balance">
             {post.metadata.title}
+          </Heading>
+          <Text variant="label-default-s" onBackground="neutral-weak">
+            {formatDate(post.metadata.publishedAt, false)}
           </Text>
           {post.metadata.tag && (
-            <Text variant="label-strong-s" onBackground="neutral-weak">
-              {post.metadata.tag}
-            </Text>
+            <Tag className="mt-8" label={post.metadata.tag} variant="neutral" />
           )}
         </Column>
-      </Row>
-    </Card>
+      </Flex>
+    </SmartLink>
   );
 }

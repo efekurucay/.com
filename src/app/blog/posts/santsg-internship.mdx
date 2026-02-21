@@ -1,0 +1,72 @@
+---
+title: "Transforming Developer Experience: My AI Internship at SAN TSG"
+publishedAt: "2025-08-03"
+image: "/images/blog/santsg-internship.png"
+summary: "During my internship at SAN TSG's R&D department, I had the incredible opportunity to lead the development of 'RAGby', an AI-powered documentation assistant designed to revolutionize the company's internal developer experience."
+tags:
+  - "Internship"
+  - "AI"
+  - "Software Development"
+---
+<img src="/images/blog/santsg-internship.png" alt="SAN TSG Internship" style={{
+  width: "384px",
+  height: "216px",
+  objectFit: "cover",
+  borderRadius: "8px",
+  marginTop: "10px",
+  marginBottom: "10px"
+}} />
+
+Stepping out of the theoretical world of university education and into the dynamic environment of professional software development is very important for every engineering student. This summer, I had the opportunity to take that step at SAN Tourism Software Group (SAN TSG), a leader in tourism technologies. This internship was not just about writing code; it was a story of solving a real-world business problem, transforming an idea into a product from scratch, and growing both technically and personally throughout the process. Of course, the fact that it involved artificial intelligence made it particularly satisfying from an innovative perspective.
+
+## Challenge Encountered: Developer Experience (DX) and Documentation Chaos
+
+
+At a well-established and large technology company such as SAN TSG, there are dozens of products and services that have been developed over the years. This situation has led to internal documentation becoming enormous and complex. Developers could spend hours searching through PDFs, Confluence pages, and various documents to understand how an API works or to use a specific feature. This was a critical issue that reduced efficiency and negatively impacted the “Developer Experience” (DX).
+
+My internship project was born out of the need to address this issue: **to create an AI-powered assistant that can provide developers with natural language, instant, and accurate answers to their questions.**
+
+## Phase 1: Laying the Foundations (Initial Prototype and RAG Architecture)
+
+The first few weeks of the project were spent in an intensive research and learning process. My task was based on **Retrieval-Augmented Generation (RAG)**, one of the modern artificial intelligence architectures. RAG enables a language model (LLM) to generate responses by utilizing a specific knowledge source (in our case, company documents) outside of its own knowledge.
+
+Our first goal was to create a prototype (Proof-of-Concept) that demonstrated the concept's feasibility. In this phase:
+-  **Data Loading and Chunking:** We divided hundreds of pages of documents into smaller, more manageable chunks while preserving their semantic integrity.
+-   **Vector Database:** We converted these chunks into vectors to make them semantically searchable and loaded them into the **ChromaDB** vector database, which was a quick solution at the outset.
+-   **Initial Query Flow:** Using the LangChain library, we created a basic API that takes the user query, searches ChromaDB, and sends the most relevant document chunks to an LLM as context.
+
+This initial prototype, though not yet intelligent, provided us with great motivation by demonstrating that the system could work end-to-end.
+
+## Stage 2: Evolution and Intelligence Layer (Making the System Smarter)
+
+After the prototype was up and running, the real engineering began: making the system smarter, more efficient, and more scalable. We made several critical improvements during this stage:
+
+#### Database Revolution: Transition from ChromaDB to PostgreSQL
+As the project grew, we realized that keeping document metadata (source, date, etc.) and vectors in separate locations made management more difficult. Therefore, we decided to migrate to the industry-standard **PostgreSQL** with the `pgvector` extension. This migration provided us with the following benefits:
+-   **Data Integrity:** Metadata and vectors are now stored in the same table, in a relational structure.
+-   **Advanced Querying:** We gained complex filtering and querying capabilities.
+-   **Scalability:** We created a more robust and manageable infrastructure at the enterprise level.
+
+#### Improving the RAG Engine: “Router-Retriever” Architecture
+The system's biggest leap in intelligence came with the **“Two-Stage Router-Retriever”** architecture we developed. Standard RAG systems search for a question across the entire knowledge pool. Our approach was smarter:
+1. **Router:** The question from the user is first analyzed by a smaller, faster, and more cost-effective LLM. The sole purpose of this model is to determine which document set (e.g., “Paximum API” or “TourVisio Setup”) the question is related to.
+2.  **Retriever:** A more powerful search algorithm is run on the specific document set identified by the router to find the most relevant information.
+3.  **Answer Generation:** This filtered and highly accurate information is sent to the main and most powerful LLM to generate the final answer.
+
+This architecture dramatically increased both the **speed** and **accuracy** of the system by eliminating unnecessary searches.
+
+## Stage 3: A Fully-Fledged Platform: “RAGby”
+In the final week of the internship, we took the powerful infrastructure we had developed and transformed it from a mere API into a fully-functional platform that touches the end user, and we named it **“RAGby”**.
+-   **“Highlight-to-Ask”:** One of my favorite features I developed to take the user experience to the next level. Developers can now select text they don't understand on the documentation site with their mouse and ask RAGby a question about that topic with a single click. This has made accessing information incredibly intuitive.
+- **Administrator Panel and Security:** We built a secure administrator panel where documents can be easily managed, protected by **JWT (JSON Web Token)**-based authentication.
+-   **Persistent Storage:** Using **Docker Volume**, we set up a reliable storage infrastructure that ensures files uploaded to the system are not lost even if the application restarts.
+
+## Results and Personal Gains
+
+On the last day of the internship, our final presentation to the R&D department, which included a promotional video showcasing all the project's capabilities and a live demo, was the most satisfying moment of the month-long effort. It was gratifying to see how the project, which began as a simple idea, had evolved into a smart, professional platform that provided a solution to a real problem.
+
+This internship did more than just equip me with technical skills like RAG, PostgreSQL, and Docker. It also taught me how to shape a product’s vision, question the “why” behind technical decisions, work harmoniously with a team, and most importantly, effectively communicate the value of your work.
+
+I extend my heartfelt thanks to the SAN Tourism Software Group, my managers who trusted me and enabled me to take ownership of the project, and my team members who always supported me. “RAGby” was much more than an internship project for me; it was a living proof of what is possible with passion, curiosity, and technology.
+
+RAGby product launch video : https://url.efekurucay.com/ragby

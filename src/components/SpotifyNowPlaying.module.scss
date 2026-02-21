@@ -1,0 +1,100 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-m);
+  overflow: hidden;
+  padding: var(--spacing-s);
+  border: 1px solid var(--color-border-neutral-strong);
+  border-radius: var(--radius-m);
+  transition: background-color 0.2s ease-in-out;
+  max-width: 320px;
+}
+
+.link {
+  text-decoration: none;
+  display: inline-block;
+
+  &:hover {
+    .container {
+      background-color: var(--color-surface-neutral-subtle);
+    }
+  }
+}
+
+.albumImage {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-s);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.songInfo {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.equalizer {
+  display: flex;
+  align-items: flex-end;
+  height: 14px;
+  gap: 3px;
+  margin-left: auto;
+  padding-left: var(--spacing-s);
+
+  span {
+    width: 3px;
+    height: 100%;
+    background-color: var(--color-brand-default);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+
+  span:nth-of-type(2) {
+    animation-delay: -1.0s;
+  }
+
+  span:nth-of-type(3) {
+    animation-delay: -0.8s;
+  }
+  span:nth-of-type(4) {
+    animation-delay: -0.6s;
+  }
+}
+
+@keyframes bounce {
+  0%, 40%, 100% {
+    transform: scaleY(0.2);
+    transform-origin: bottom;
+  }
+  20% {
+    transform: scaleY(1.0);
+    transform-origin: bottom;
+  }
+}
+
+.spotifyIcon {
+  opacity: 0.7;
+}
+
+.spotifyIconPlaying {
+  opacity: 1;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
