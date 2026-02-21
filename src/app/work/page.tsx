@@ -21,16 +21,16 @@ export async function generateMetadata() {
 }
 
 export default async function Work() {
-  let personName = staticPerson.name;
-  let workSettings = { title: staticWork.title, description: staticWork.description };
+  let personData: any;
+  let workData: any;
   let allProjects: any[] = [];
 
   try {
     const [person, ws, projects] = await Promise.all([
       getPerson(), getWorkSettings(), getVisibleProjects(),
     ]);
-    if (person) personName = `${person.firstName} ${person.lastName}`;
-    if (ws) workSettings = { title: ws.title, description: ws.description };
+    personData = person;
+    workData = ws;
     if (projects.length > 0) {
       allProjects = projects.map((p) => ({
         slug: p.slug,
@@ -38,6 +38,11 @@ export default async function Work() {
       }));
     }
   } catch { }
+
+  if (!personData) personData = { ...staticPerson, name: staticPerson.name };
+  else personData.name = `${personData.firstName} ${personData.lastName}`;
+
+  if (!workData) workData = staticWork;
 
   if (allProjects.length === 0) {
     allProjects = getPosts(["src", "app", "work", "projects"]);
@@ -52,11 +57,11 @@ export default async function Work() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            headline: workSettings.title,
-            description: workSettings.description,
+            headline: workData.title,
+            description: workData.description,
             url: `https://${baseURL}/projects`,
             image: `${baseURL}/og?title=Design%20Projects`,
-            author: { "@type": "Person", name: personName },
+            author: { "@type": "Person", name: personData.name },
             hasPart: allProjects.map((project) => ({
               "@type": "CreativeWork",
               headline: project.metadata.title,

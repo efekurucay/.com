@@ -8,11 +8,10 @@ import styles from "@/components/Header.module.scss";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 import { routes, display } from "@/app/resources";
-import { person, home, about, blog, work, chat, contact } from "@/app/resources/content";
 
 type TimeDisplayProps = {
   timeZone: string;
-  locale?: string; // Optionally allow locale, defaulting to 'en-GB'
+  locale?: string;
 };
 
 const TimeDisplay: React.FC<TimeDisplayProps> = ({ timeZone, locale = "en-GB" }) => {
@@ -43,7 +42,11 @@ const TimeDisplay: React.FC<TimeDisplayProps> = ({ timeZone, locale = "en-GB" })
 
 export default TimeDisplay;
 
-export const Header = () => {
+interface HeaderProps {
+  person: any;
+}
+
+export const Header: React.FC<HeaderProps> = ({ person }) => {
   const pathname = usePathname() ?? "";
 
   return (
@@ -60,7 +63,6 @@ export const Header = () => {
         horizontal="center"
       >
         <Flex paddingLeft="12" fillWidth vertical="center" textVariant="body-default-s">
-          {/* {display.location && <Flex hide="s">{person.location}</Flex>} Show location in top left. */}
         </Flex>
 
 
@@ -84,7 +86,7 @@ export const Header = () => {
                     className="s-flex-hide"
                     prefixIcon="person"
                     href="/about"
-                    label={about.label}
+                    label="About"
                     selected={pathname === "/about"}
                   />
                   <ToggleButton
@@ -101,7 +103,7 @@ export const Header = () => {
                     className="s-flex-hide"
                     prefixIcon="grid"
                     href="/work"
-                    label={work.label}
+                    label="Work"
                     selected={pathname.startsWith("/work")}
                   />
                   <ToggleButton
@@ -118,7 +120,7 @@ export const Header = () => {
                     className="s-flex-hide"
                     prefixIcon="book"
                     href="/blog"
-                    label={blog.label}
+                    label="Blog"
                     selected={pathname.startsWith("/blog")}
                   />
                   <ToggleButton
@@ -136,7 +138,7 @@ export const Header = () => {
                     className="s-flex-hide"
                     prefixIcon="brain"
                     href="/chat"
-                    label={chat.label}
+                    label="AI Chat"
                     selected={pathname.startsWith("/chat")}
                   />
                   <ToggleButton
@@ -153,7 +155,7 @@ export const Header = () => {
                     className="s-flex-hide"
                     prefixIcon="email"
                     href="/contact"
-                    label={contact.label}
+                    label="Contact"
                     selected={pathname.startsWith("/contact")}
                   />
                   <ToggleButton
@@ -177,7 +179,7 @@ export const Header = () => {
             textVariant="body-default-s"
             gap="20"
           >
-            <Flex hide="s">{display.time && <TimeDisplay timeZone={person.location} />}</Flex>
+            <Flex hide="s">{display.time && person?.location && <TimeDisplay timeZone={person.location} />}</Flex>
           </Flex>
         </Flex>
       </Flex>

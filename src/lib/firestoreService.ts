@@ -205,14 +205,13 @@ export async function getSocialLinks(): Promise<SocialLink[]> {
     return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as SocialLink));
 }
 
-/** Get all experiences by type, sorted by order */
 export async function getExperiences(type?: "work" | "organization"): Promise<Experience[]> {
-    let query = db().collection("experiences").orderBy("order");
+    const snap = await db().collection("experiences").orderBy("order").get();
+    let exps = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Experience));
     if (type) {
-        query = db().collection("experiences").where("type", "==", type).orderBy("order");
+        exps = exps.filter((exp) => exp.type === type);
     }
-    const snap = await query.get();
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Experience));
+    return exps;
 }
 
 /** Get all education entries sorted by order */

@@ -13,8 +13,7 @@ import {
   Grid,
   Icon,
 } from "@/once-ui/components";
-import { baseURL, routes } from "@/app/resources";
-import { home, about, person } from "@/app/resources/content";
+import { baseURL } from "@/app/resources";
 
 import { Posts } from "@/components/blog/Posts";
 import { Projects } from "@/components/work/Projects";
@@ -22,6 +21,7 @@ import NowPlaying from "@/components/SpotifyNowPlaying";
 import GitHubActivity from "@/components/GitHubActivity";
 import NeuralNetworkCanvas from "@/components/NeuralNetworkCanvas";
 import styles from './HomePageClient.module.scss';
+import ReactMarkdown from "react-markdown";
 
 interface Content {
   slug: string;
@@ -32,11 +32,14 @@ interface Content {
 }
 
 interface HomePageClientProps {
-  latestProject: Content;
-  latestPost: Content;
+  latestProject: Content | null;
+  latestPost: Content | null;
+  person: any;
+  homeData: any;
+  aboutData: any;
 }
 
-export default function HomePageClient({ latestProject, latestPost }: HomePageClientProps) {
+export default function HomePageClient({ latestProject, latestPost, person, homeData, aboutData }: HomePageClientProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const card1Ref = useRef<HTMLDivElement>(null);
   const card2Ref = useRef<HTMLDivElement>(null);
@@ -53,10 +56,10 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: home.title,
-            description: home.description,
+            name: homeData.headline,
+            description: homeData.subline,
             url: `https://${baseURL}`,
-            image: `${baseURL}/og?title=${encodeURIComponent(home.title)}`,
+            image: `${baseURL}/og?title=${encodeURIComponent(homeData.headline)}`,
             publisher: {
               "@type": "Person",
               name: person.name,
@@ -102,53 +105,57 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
             </Button>
           </Flex>
           {/* Latest Project Card */}
-          <Flex ref={card4Ref} direction="column" gap="s" padding="m" radius="l" background="surface" border="neutral-alpha-medium" style={{ zIndex: 1 }}>
-            <Heading as="h2" variant="heading-strong-s">
-              Latest Project
-            </Heading>
-            <Flex as="div" gap="m" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
-              {latestProject.images && latestProject.images.length > 0 && (
-                <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
-                  <Image
-                    src={latestProject.images[0]}
-                    alt={latestProject.title}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                  />
-                </div>
-              )}
-              <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
-                <Text onBackground="neutral-weak" size="s" wrap="balance">{latestProject.title}</Text>
-                <Button href={`/work/${latestProject.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
-                  View
-                </Button>
+          {latestProject && (
+            <Flex ref={card4Ref} direction="column" gap="s" padding="m" radius="l" background="surface" border="neutral-alpha-medium" style={{ zIndex: 1 }}>
+              <Heading as="h2" variant="heading-strong-s">
+                Latest Project
+              </Heading>
+              <Flex as="div" gap="m" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
+                {latestProject.images && latestProject.images.length > 0 && (
+                  <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
+                    <Image
+                      src={latestProject.images[0]}
+                      alt={latestProject.title}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
+                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
+                  <Text onBackground="neutral-weak" size="s" wrap="balance">{latestProject.title}</Text>
+                  <Button href={`/work/${latestProject.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
+                    View
+                  </Button>
+                </Flex>
               </Flex>
             </Flex>
-          </Flex>
+          )}
           {/* Latest Blog Card */}
-          <Flex ref={card5Ref} direction="column" gap="s" padding="m" radius="l" background="surface" border="neutral-alpha-medium" style={{ zIndex: 1 }}>
-            <Heading as="h2" variant="heading-strong-s">
-              Latest Blog
-            </Heading>
-            <Flex as="div" gap="m" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
-              {latestPost.image && (
-                <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
-                  <Image
-                    src={latestPost.image}
-                    alt={latestPost.title}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                  />
-                </div>
-              )}
-              <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
-                <Text onBackground="neutral-weak" size="s" wrap="balance">{latestPost.title}</Text>
-                <Button href={`/blog/${latestPost.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
-                  Read
-                </Button>
+          {latestPost && (
+            <Flex ref={card5Ref} direction="column" gap="s" padding="m" radius="l" background="surface" border="neutral-alpha-medium" style={{ zIndex: 1 }}>
+              <Heading as="h2" variant="heading-strong-s">
+                Latest Blog
+              </Heading>
+              <Flex as="div" gap="m" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
+                {latestPost.image && (
+                  <div style={{ position: 'relative', width: '56px', height: '56px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
+                    <Image
+                      src={latestPost.image}
+                      alt={latestPost.title}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
+                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
+                  <Text onBackground="neutral-weak" size="s" wrap="balance">{latestPost.title}</Text>
+                  <Button href={`/blog/${latestPost.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
+                    Read
+                  </Button>
+                </Flex>
               </Flex>
             </Flex>
-          </Flex>
+          )}
         </Grid>
         <NeuralNetworkCanvas containerRef={containerRef} cardRefs={[card1Ref, card2Ref, card3Ref, card4Ref, card5Ref]} />
       </div>
@@ -158,12 +165,12 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
           <Column maxWidth="s" gap="m" horizontal="start">
             <RevealFx translateY="4" fillWidth horizontal="start" paddingBottom="m">
               <Heading wrap="balance" variant="display-strong-m" className={styles.headline}>
-                {home.headline}
+                {homeData.headline}
               </Heading>
             </RevealFx>
             <RevealFx translateY="8" delay={0.2} fillWidth horizontal="start" paddingBottom="m">
               <Text wrap="balance" onBackground="neutral-weak" variant="heading-default-l" className={styles.subline}>
-                {home.subline}
+                {homeData.subline}
               </Text>
             </RevealFx>
             <RevealFx translateY="12" delay={0.4} horizontal="start">
@@ -176,14 +183,14 @@ export default function HomePageClient({ latestProject, latestPost }: HomePageCl
                 arrowIcon
               >
                 <Flex gap="8" vertical="center">
-                  {about.avatar.display && (
+                  {aboutData.avatarDisplay && (
                     <Avatar
                       style={{ marginLeft: "-0.75rem", marginRight: "0.25rem" }}
                       src={person.avatar}
                       size="m"
                     />
                   )}
-                  {about.title}
+                  About
                 </Flex>
 
               </Button>

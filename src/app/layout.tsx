@@ -10,20 +10,33 @@ import { baseURL, effects, style } from "@/app/resources";
 import { Inter } from "next/font/google";
 import { Source_Code_Pro } from "next/font/google";
 
-import { person, home } from "@/app/resources/content";
+import { person as staticPerson, social as staticSocial, about as staticAbout, home as staticHome } from "@/app/resources/content";
+import { getPerson, getSocialLinks, getAbout, getHome } from "@/lib/firestoreService";
 import { Background, Column, Flex, ToastProvider } from "@/once-ui/components";
 import { Providers } from "@/app/providers";
 
+// ... existing generateMetadata code ...
 export async function generateMetadata() {
+  let homeData;
+  let personData;
+  try {
+    homeData = await getHome();
+    personData = await getPerson();
+  } catch { }
+
+  const title = homeData?.title || staticHome.title;
+  const description = homeData?.description || staticHome.description;
+  const personName = personData ? `${personData.firstName}` : staticPerson.firstName;
+
   return {
     metadataBase: new URL(`https://${baseURL}`),
-    title: home.title,
-    description: home.description,
+    title: title,
+    description: description,
     openGraph: {
-      title: `${person.firstName}'s Portfolio`,
+      title: `${personName}'s Portfolio`,
       description: "Portfolio website showcasing my work.",
       url: baseURL,
-      siteName: `${person.firstName}'s Portfolio`,
+      siteName: `${personName}'s Portfolio`,
       locale: "en_US",
       type: "website",
     },
@@ -51,14 +64,8 @@ type FontConfig = {
   variable: string;
 };
 
-/*
-  Replace with code for secondary and tertiary fonts
-  from https://once-ui.com/customize
-*/
 const secondary: FontConfig | undefined = undefined;
 const tertiary: FontConfig | undefined = undefined;
-/*
- */
 
 const code = Source_Code_Pro({
   variable: "--font-code",
@@ -71,6 +78,29 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children }: RootLayoutProps) {
+  let personData: any;
+  let socialData: any;
+  let aboutData: any;
+
+  try {
+    const [p, s, a] = await Promise.all([getPerson(), getSocialLinks(), getAbout()]);
+    personData = p;
+    socialData = s;
+    aboutData = a;
+  } catch { }
+
+  if (!personData) personData = { ...staticPerson, name: staticPerson.name };
+  else personData.name = `${personData.firstName} ${personData.lastName}`;
+
+  if (!socialData || socialData.length === 0) socialData = staticSocial;
+  else socialData = socialData.map((s: any) => ({
+    name: s.name,
+    icon: s.icon ? s.icon.toLowerCase() : s.name ? s.name.toLowerCase() : "",
+    link: s.link
+  }));
+
+  if (!aboutData) aboutData = staticAbout;
+
   return (
     <html
       lang="en"
@@ -113,18 +143,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                         tilt: effects.gradient.tilt,
                         colorStart: effects.gradient.colorStart,
                         colorEnd: effects.gradient.colorEnd,
-                        opacity: effects.gradient.opacity as
-                          | 0
-                          | 10
-                          | 20
-                          | 30
-                          | 40
-                          | 50
-                          | 60
-                          | 70
-                          | 80
-                          | 90
-                          | 100,
+                        opacity: effects.gradient.opacity as any,
                       }}
                       dots={{
                         display: effects.dots.display,
@@ -145,7 +164,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                       }}
                     />
                     <Flex fillWidth minHeight="16"></Flex>
-                    <Header />
+                    <Header person={personData} />
                     <Flex
                       position="relative"
                       zIndex={0}
@@ -159,7 +178,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                         <RouteGuard>{children}</RouteGuard>
                       </Flex>
                     </Flex>
-                    <Footer />
+                    <Footer person={personData} social={socialData} />
                   </Column>
                 </Flex>
               }

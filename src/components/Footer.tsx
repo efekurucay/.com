@@ -1,8 +1,12 @@
 import { Flex, IconButton, SmartLink, Text } from "@/once-ui/components";
-import { person, social } from "@/app/resources/content";
 import styles from "./Footer.module.scss";
 
-export const Footer = () => {
+interface FooterProps {
+  person: any;
+  social: any[];
+}
+
+export const Footer: React.FC<FooterProps> = ({ person, social }) => {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -27,13 +31,11 @@ export const Footer = () => {
           <Text onBackground="neutral-weak">© {currentYear} /</Text>
           <Text paddingX="4">{person.name}</Text>
           <Text onBackground="neutral-weak">
-            {/* Usage of this template requires attribution. Please don't remove the link to Once UI. */}
-            
           </Text>
         </Text>
         <Flex gap="16">
           {social.map(
-            (item) =>
+            (item: any) =>
               item.link && (
                 <IconButton
                   key={item.name}

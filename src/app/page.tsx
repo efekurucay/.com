@@ -1,9 +1,9 @@
 import React from "react";
 import { baseURL } from "@/app/resources";
-import { home as staticHome, person as staticPerson } from "@/app/resources/content";
+import { home as staticHome, person as staticPerson, about as staticAbout } from "@/app/resources/content";
 import HomePageClient from "@/components/HomePageClient";
 import { getPosts } from "@/app/utils/utils";
-import { getHome, getPerson, getVisibleProjects, getVisiblePosts } from "@/lib/firestoreService";
+import { getHome, getPerson, getAbout, getVisibleProjects, getVisiblePosts } from "@/lib/firestoreService";
 
 export const revalidate = 60;
 
@@ -30,15 +30,25 @@ export async function generateMetadata() {
 export default async function Home() {
   let latestProject: any = null;
   let latestPost: any = null;
+  let personData: any;
+  let homeData: any;
+  let aboutData: any;
 
   try {
     // Try Firestore first
-    const [firestoreProjects, firestorePosts] = await Promise.all([
+    const [firestoreProjects, firestorePosts, firestorePerson, firestoreHome, firestoreAbout] = await Promise.all([
       getVisibleProjects(),
       getVisiblePosts(),
+      getPerson(),
+      getHome(),
+      getAbout()
     ]);
 
-    if (firestoreProjects.length > 0) {
+    personData = firestorePerson;
+    homeData = firestoreHome;
+    aboutData = firestoreAbout;
+
+    if (firestoreProjects && firestoreProjects.length > 0) {
       const p = firestoreProjects[0];
       latestProject = {
         title: p.title, slug: p.slug, summary: p.summary,
@@ -46,7 +56,7 @@ export default async function Home() {
       };
     }
 
-    if (firestorePosts.length > 0) {
+    if (firestorePosts && firestorePosts.length > 0) {
       const p = firestorePosts[0];
       latestPost = {
         title: p.title, slug: p.slug, summary: p.summary,
@@ -54,6 +64,13 @@ export default async function Home() {
       };
     }
   } catch { }
+
+  // Fallback to static if Firestore is empty or fails
+  if (!personData) personData = { ...staticPerson, name: staticPerson.name };
+  else personData.name = `${personData.firstName} ${personData.lastName}`;
+
+  if (!homeData) homeData = staticHome;
+  if (!aboutData) aboutData = { avatarDisplay: staticAbout.avatar.display };
 
   // Fallback to file system
   if (!latestProject) {
@@ -75,6 +92,6 @@ export default async function Home() {
   }
 
   return (
-    <HomePageClient latestProject={latestProject} latestPost={latestPost} />
+    <HomePageClient latestProject={latestProject} latestPost={latestPost} person={personData} homeData={homeData} aboutData={aboutData} />
   );
 }

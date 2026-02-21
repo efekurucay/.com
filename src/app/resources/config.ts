@@ -10,11 +10,6 @@ const routes: { [key: string]: boolean } = {
   "/admin": true,
 };
 
-// Enable password protection on selected routes
-// Set password in the .env file, refer to .env.example
-const protectedRoutes: { [key: string]: boolean } = {
-  "/work/": true,
-};
 
 const style: {
   theme: "dark" | "light";
@@ -148,4 +143,4 @@ const display: {
   time: true,
 };
 
-export { routes, protectedRoutes, effects, style, display, baseURL };
+export { routes, effects, style, display, baseURL };
