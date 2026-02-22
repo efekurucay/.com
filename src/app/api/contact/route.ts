@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       email: email,
       message: message,
       createdAt: serverTimestamp(),
+      read: false,
     });
 
     // 2. Send email notification

@@ -170,7 +170,11 @@ export default function HomePageClient({ latestProject, latestPost, person, home
             </RevealFx>
             <RevealFx translateY="8" delay={0.2} fillWidth horizontal="start" paddingBottom="m">
               <Text wrap="balance" onBackground="neutral-weak" variant="heading-default-l" className={styles.subline}>
-                {homeData.subline}
+                {typeof homeData.subline === 'string' ? (
+                  <ReactMarkdown>{homeData.subline}</ReactMarkdown>
+                ) : (
+                  homeData.subline
+                )}
               </Text>
             </RevealFx>
             <RevealFx translateY="12" delay={0.4} horizontal="start">

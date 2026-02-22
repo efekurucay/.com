@@ -5,13 +5,13 @@ import classNames from "classnames";
 
 import { Footer, Header, RouteGuard } from "@/components";
 import SiteShell from "@/components/SiteShell";
-import { baseURL, effects, style } from "@/app/resources";
+import { baseURL, effects as staticEffects, style as staticStyle, display as staticDisplay } from "@/app/resources";
 
 import { Inter } from "next/font/google";
 import { Source_Code_Pro } from "next/font/google";
 
 import { person as staticPerson, social as staticSocial, about as staticAbout, home as staticHome } from "@/app/resources/content";
-import { getPerson, getSocialLinks, getAbout, getHome } from "@/lib/firestoreService";
+import { getPerson, getSocialLinks, getAbout, getHome, getSiteConfig } from "@/lib/firestoreService";
 import { Background, Column, Flex, ToastProvider } from "@/once-ui/components";
 import { Providers } from "@/app/providers";
 
@@ -77,16 +77,38 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
+type SiteConfig = {
+  theme?: typeof staticStyle.theme;
+  neutral?: typeof staticStyle.neutral;
+  brand?: typeof staticStyle.brand;
+  accent?: typeof staticStyle.accent;
+  solid?: typeof staticStyle.solid;
+  solidStyle?: typeof staticStyle.solidStyle;
+  border?: typeof staticStyle.border;
+  surface?: typeof staticStyle.surface;
+  transition?: typeof staticStyle.transition;
+  scaling?: typeof staticStyle.scaling;
+  mask?: Partial<typeof staticEffects.mask>;
+  gradient?: Partial<typeof staticEffects.gradient>;
+  dots?: Partial<typeof staticEffects.dots>;
+  grid?: Partial<typeof staticEffects.grid>;
+  lines?: Partial<typeof staticEffects.lines>;
+  displayLocation?: boolean;
+  displayTime?: boolean;
+};
+
 export default async function RootLayout({ children }: RootLayoutProps) {
   let personData: any;
   let socialData: any;
   let aboutData: any;
+  let siteConfig: SiteConfig | null = null;
 
   try {
-    const [p, s, a] = await Promise.all([getPerson(), getSocialLinks(), getAbout()]);
+    const [p, s, a, config] = await Promise.all([getPerson(), getSocialLinks(), getAbout(), getSiteConfig()]);
     personData = p;
     socialData = s;
     aboutData = a;
+    siteConfig = config;
   } catch { }
 
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
@@ -101,18 +123,47 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
   if (!aboutData) aboutData = staticAbout;
 
+  const styleConfig = {
+    ...staticStyle,
+    theme: siteConfig?.theme ?? staticStyle.theme,
+    neutral: siteConfig?.neutral ?? staticStyle.neutral,
+    brand: siteConfig?.brand ?? staticStyle.brand,
+    accent: siteConfig?.accent ?? staticStyle.accent,
+    solid: siteConfig?.solid ?? staticStyle.solid,
+    solidStyle: siteConfig?.solidStyle ?? staticStyle.solidStyle,
+    border: siteConfig?.border ?? staticStyle.border,
+    surface: siteConfig?.surface ?? staticStyle.surface,
+    transition: siteConfig?.transition ?? staticStyle.transition,
+    scaling: siteConfig?.scaling ?? staticStyle.scaling,
+  };
+
+  const effectsConfig = {
+    mask: { ...staticEffects.mask, ...(siteConfig?.mask ?? {}) },
+    gradient: { ...staticEffects.gradient, ...(siteConfig?.gradient ?? {}) },
+    dots: { ...staticEffects.dots, ...(siteConfig?.dots ?? {}) },
+    grid: { ...staticEffects.grid, ...(siteConfig?.grid ?? {}) },
+    lines: { ...staticEffects.lines, ...(siteConfig?.lines ?? {}) },
+  };
+
+  const displayConfig = {
+    location: siteConfig?.displayLocation ?? staticDisplay.location,
+    time: siteConfig?.displayTime ?? staticDisplay.time,
+  };
+
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      data-neutral={style.neutral}
-      data-brand={style.brand}
-      data-accent={style.accent}
-      data-solid={style.solid}
-      data-solid-style={style.solidStyle}
-      data-border={style.border}
-      data-surface={style.surface}
-      data-transition={style.transition}
+      data-theme={styleConfig.theme}
+      data-neutral={styleConfig.neutral}
+      data-brand={styleConfig.brand}
+      data-accent={styleConfig.accent}
+      data-solid={styleConfig.solid}
+      data-solid-style={styleConfig.solidStyle}
+      data-border={styleConfig.border}
+      data-surface={styleConfig.surface}
+      data-transition={styleConfig.transition}
+      data-scaling={styleConfig.scaling}
       className={classNames(
         primary.variable,
         secondary ? secondary.variable : "",
@@ -129,42 +180,42 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                   <Column style={{ minHeight: "100vh" }} fillWidth>
                     <Background
                       mask={{
-                        cursor: effects.mask.cursor,
-                        x: effects.mask.x,
-                        y: effects.mask.y,
-                        radius: effects.mask.radius,
+                        cursor: effectsConfig.mask.cursor,
+                        x: effectsConfig.mask.x,
+                        y: effectsConfig.mask.y,
+                        radius: effectsConfig.mask.radius,
                       }}
                       gradient={{
-                        display: effects.gradient.display,
-                        x: effects.gradient.x,
-                        y: effects.gradient.y,
-                        width: effects.gradient.width,
-                        height: effects.gradient.height,
-                        tilt: effects.gradient.tilt,
-                        colorStart: effects.gradient.colorStart,
-                        colorEnd: effects.gradient.colorEnd,
-                        opacity: effects.gradient.opacity as any,
+                        display: effectsConfig.gradient.display,
+                        x: effectsConfig.gradient.x,
+                        y: effectsConfig.gradient.y,
+                        width: effectsConfig.gradient.width,
+                        height: effectsConfig.gradient.height,
+                        tilt: effectsConfig.gradient.tilt,
+                        colorStart: effectsConfig.gradient.colorStart,
+                        colorEnd: effectsConfig.gradient.colorEnd,
+                        opacity: effectsConfig.gradient.opacity as any,
                       }}
                       dots={{
-                        display: effects.dots.display,
-                        color: effects.dots.color,
-                        size: effects.dots.size as any,
-                        opacity: effects.dots.opacity as any,
+                        display: effectsConfig.dots.display,
+                        color: effectsConfig.dots.color,
+                        size: effectsConfig.dots.size as any,
+                        opacity: effectsConfig.dots.opacity as any,
                       }}
                       grid={{
-                        display: effects.grid.display,
-                        color: effects.grid.color,
-                        width: effects.grid.width as any,
-                        height: effects.grid.height as any,
-                        opacity: effects.grid.opacity as any,
+                        display: effectsConfig.grid.display,
+                        color: effectsConfig.grid.color,
+                        width: effectsConfig.grid.width as any,
+                        height: effectsConfig.grid.height as any,
+                        opacity: effectsConfig.grid.opacity as any,
                       }}
                       lines={{
-                        display: effects.lines.display,
-                        opacity: effects.lines.opacity as any,
+                        display: effectsConfig.lines.display,
+                        opacity: effectsConfig.lines.opacity as any,
                       }}
                     />
                     <Flex fillWidth minHeight="16"></Flex>
-                    <Header person={personData} />
+                    <Header person={personData} display={displayConfig} />
                     <Flex
                       position="relative"
                       zIndex={0}

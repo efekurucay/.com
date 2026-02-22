@@ -7,7 +7,7 @@ import { Fade, Flex, Line, ToggleButton } from "@/once-ui/components";
 import styles from "@/components/Header.module.scss";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
-import { routes, display } from "@/app/resources";
+import { routes } from "@/app/resources";
 
 type TimeDisplayProps = {
   timeZone: string;
@@ -44,9 +44,13 @@ export default TimeDisplay;
 
 interface HeaderProps {
   person: any;
+  display: {
+    location: boolean;
+    time: boolean;
+  };
 }
 
-export const Header: React.FC<HeaderProps> = ({ person }) => {
+export const Header: React.FC<HeaderProps> = ({ person, display }) => {
   const pathname = usePathname() ?? "";
 
   return (
