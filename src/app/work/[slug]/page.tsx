@@ -4,7 +4,6 @@ import { baseURL } from "@/app/resources";
 import { person as staticPerson } from "@/app/resources/content";
 import { formatDate } from "@/app/utils/formatDate";
 import { getProjectBySlug, getPerson } from "@/lib/firestoreService";
-import { getPosts } from "@/app/utils/utils";
 import ReactMarkdown from "react-markdown";
 
 export const revalidate = 60;
@@ -20,16 +19,6 @@ export async function generateMetadata({ params }: WorkProjectParams) {
   try {
     project = await getProjectBySlug(slug);
   } catch { }
-
-  if (!project) {
-    try {
-      const allProjects = getPosts(["src", "app", "work", "projects"]);
-      const fileProject = allProjects.find((p) => p.slug === slug);
-      if (fileProject) {
-        project = { title: fileProject.metadata.title, summary: fileProject.metadata.summary, images: fileProject.metadata.images };
-      }
-    } catch { }
-  }
 
   if (!project) return { title: "Project not found" };
 
@@ -55,25 +44,6 @@ export default async function WorkProject({ params }: WorkProjectParams) {
     project = await getProjectBySlug(slug);
     personData = await getPerson();
   } catch { }
-
-  if (!project) {
-    try {
-      const allProjects = getPosts(["src", "app", "work", "projects"]);
-      const fileProject = allProjects.find((p) => p.slug === slug);
-      if (fileProject) {
-        project = {
-          title: fileProject.metadata.title,
-          content: fileProject.content,
-          images: fileProject.metadata.images || [],
-          image: fileProject.metadata.image || "",
-          summary: fileProject.metadata.summary,
-          publishedAt: fileProject.metadata.publishedAt,
-          team: fileProject.metadata.team || [],
-          link: fileProject.metadata.link || "",
-        };
-      }
-    } catch { }
-  }
 
   if (!project) notFound();
 

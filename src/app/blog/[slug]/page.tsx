@@ -3,8 +3,7 @@ import { Column, Flex, Heading, SmartImage, Text, Button, Avatar } from "@/once-
 import { baseURL } from "@/app/resources";
 import { person as staticPerson } from "@/app/resources/content";
 import { formatDate } from "@/app/utils/formatDate";
-import { getPostBySlug, getVisiblePosts, getPerson } from "@/lib/firestoreService";
-import { getPosts } from "@/app/utils/utils";
+import { getPostBySlug, getPerson } from "@/lib/firestoreService";
 import ReactMarkdown from "react-markdown";
 
 export const revalidate = 60;
@@ -20,17 +19,6 @@ export async function generateMetadata({ params }: BlogPostParams) {
   try {
     post = await getPostBySlug(slug);
   } catch { }
-
-  if (!post) {
-    // Fallback to filesystem
-    try {
-      const allPosts = getPosts(["src", "app", "blog", "posts"]);
-      const filePost = allPosts.find((p) => p.slug === slug);
-      if (filePost) {
-        post = { title: filePost.metadata.title, summary: filePost.metadata.summary, image: filePost.metadata.image, publishedAt: filePost.metadata.publishedAt };
-      }
-    } catch { }
-  }
 
   if (!post) return { title: "Post not found" };
 
@@ -60,25 +48,6 @@ export default async function BlogPost({ params }: BlogPostParams) {
     post = await getPostBySlug(slug);
     personData = await getPerson();
   } catch { }
-
-  // Fallback to filesystem
-  if (!post) {
-    try {
-      const allPosts = getPosts(["src", "app", "blog", "posts"]);
-      const filePost = allPosts.find((p) => p.slug === slug);
-      if (filePost) {
-        post = {
-          title: filePost.metadata.title,
-          content: filePost.content,
-          image: filePost.metadata.image,
-          summary: filePost.metadata.summary,
-          publishedAt: filePost.metadata.publishedAt,
-          tags: filePost.metadata.tag || [],
-          team: filePost.metadata.team || [],
-        };
-      }
-    } catch { }
-  }
 
   if (!post) notFound();
 

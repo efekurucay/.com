@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Timestamp } from "firebase-admin/firestore";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 import { Resend } from 'resend';
 import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
 
@@ -25,11 +25,11 @@ export async function POST(req: NextRequest) {
     });
 
     // 1. Save to Firebase
-    await addDoc(collection(db, "contacts"), {
+    await getAdminDb().collection("contacts").add({
       name: name,
       email: email,
       message: message,
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
       read: false,
     });
 

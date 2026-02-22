@@ -1,5 +1,4 @@
 import { getVisiblePosts } from "@/lib/firestoreService";
-import { getPosts } from "@/app/utils/utils";
 import { Grid } from "@/once-ui/components";
 import Post from "./Post";
 
@@ -34,11 +33,6 @@ export async function Posts({ range, columns = "1", thumbnail = false }: PostsPr
     }
   } catch (e) {
     // Firestore failed, fall through to file system
-  }
-
-  // Fallback to file system
-  if (allBlogs.length === 0) {
-    allBlogs = getPosts(["src", "app", "blog", "posts"]);
   }
 
   const sortedBlogs = allBlogs.sort((a, b) => {

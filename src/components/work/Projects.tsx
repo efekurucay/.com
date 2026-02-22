@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getVisibleProjects } from "@/lib/firestoreService";
-import { getPosts } from "@/app/utils/utils";
 import { Grid, Flex, Heading, Text, RevealFx } from "@/once-ui/components";
 
 export async function Projects() {
@@ -26,10 +25,6 @@ export async function Projects() {
       }));
     }
   } catch { }
-
-  if (allProjects.length === 0) {
-    allProjects = getPosts(["src", "app", "work", "projects"]);
-  }
 
   return (
     <Grid columns="2" mobileColumns="1" gap="xl">

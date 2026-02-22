@@ -2,7 +2,6 @@ import React from "react";
 import { baseURL } from "@/app/resources";
 import { home as staticHome, person as staticPerson, about as staticAbout } from "@/app/resources/content";
 import HomePageClient from "@/components/HomePageClient";
-import { getPosts } from "@/app/utils/utils";
 import { getHome, getPerson, getAbout, getVisibleProjects, getVisiblePosts } from "@/lib/firestoreService";
 
 export const revalidate = 60;
@@ -71,25 +70,6 @@ export default async function Home() {
 
   if (!homeData) homeData = staticHome;
   if (!aboutData) aboutData = { avatarDisplay: staticAbout.avatar.display };
-
-  // Fallback to file system
-  if (!latestProject) {
-    try {
-      const projects = getPosts(["src", "app", "work", "projects"]);
-      if (projects && projects.length > 0) {
-        latestProject = { ...projects[0].metadata, slug: projects[0].slug };
-      }
-    } catch { }
-  }
-
-  if (!latestPost) {
-    try {
-      const posts = getPosts(["src", "app", "blog", "posts"]);
-      if (posts && posts.length > 0) {
-        latestPost = { ...posts[0].metadata, slug: posts[0].slug };
-      }
-    } catch { }
-  }
 
   return (
     <HomePageClient latestProject={latestProject} latestPost={latestPost} person={personData} homeData={homeData} aboutData={aboutData} />

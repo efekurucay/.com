@@ -2,7 +2,6 @@ import { Column } from "@/once-ui/components";
 import { Projects } from "@/components/work/Projects";
 import { baseURL } from "@/app/resources";
 import { getWorkSettings, getVisibleProjects, getPerson } from "@/lib/firestoreService";
-import { getPosts } from "@/app/utils/utils";
 import { person as staticPerson, work as staticWork } from "@/app/resources/content";
 
 export const revalidate = 60;
@@ -43,10 +42,6 @@ export default async function Work() {
   else personData.name = `${personData.firstName} ${personData.lastName}`;
 
   if (!workData) workData = staticWork;
-
-  if (allProjects.length === 0) {
-    allProjects = getPosts(["src", "app", "work", "projects"]);
-  }
 
   return (
     <Column maxWidth="m">

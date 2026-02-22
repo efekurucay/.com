@@ -5,7 +5,7 @@
  */
 
 import { getAdminDb } from "./firebaseAdmin";
-import type { Firestore as AdminFirestore } from "firebase-admin/firestore";
+import type { Firestore as AdminFirestore, Query as AdminQuery } from "firebase-admin/firestore";
 
 // ==================== TYPES ====================
 
@@ -206,12 +206,12 @@ export async function getSocialLinks(): Promise<SocialLink[]> {
 }
 
 export async function getExperiences(type?: "work" | "organization"): Promise<Experience[]> {
-    const snap = await db().collection("experiences").orderBy("order").get();
-    let exps = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Experience));
+    let query: AdminQuery = db().collection("experiences");
     if (type) {
-        exps = exps.filter((exp) => exp.type === type);
+        query = query.where("type", "==", type);
     }
-    return exps;
+    const snap = await query.orderBy("order").get();
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Experience));
 }
 
 /** Get all education entries sorted by order */
@@ -236,10 +236,10 @@ export async function getCertifications(): Promise<Certification[]> {
 export async function getVisiblePosts(): Promise<Post[]> {
     const snap = await db()
         .collection("posts")
+        .where("visible", "==", true)
         .orderBy("publishedAt", "desc")
         .get();
-    let posts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
-    return posts.filter(p => p.visible === true);
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
 }
 
 /** Get all blog posts (including hidden) for admin */
@@ -266,10 +266,10 @@ export async function getPostById(id: string): Promise<Post | null> {
 export async function getVisibleProjects(): Promise<Project[]> {
     const snap = await db()
         .collection("projects")
+        .where("visible", "==", true)
         .orderBy("publishedAt", "desc")
         .get();
-    let projects = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Project));
-    return projects.filter(p => p.visible === true);
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Project));
 }
 
 /** Get all projects (including hidden) for admin */
@@ -305,18 +305,17 @@ export async function getDashboardStats(): Promise<{
     messageCount: number;
     unreadCount: number;
 }> {
-    const [posts, projects, contacts] = await Promise.all([
+    const [posts, projects, totalContacts, unreadContacts] = await Promise.all([
         db().collection("posts").count().get(),
         db().collection("projects").count().get(),
-        db().collection("contacts").get(),
+        db().collection("contacts").count().get(),
+        db().collection("contacts").where("read", "==", false).count().get(),
     ]);
-
-    const unread = contacts.docs.filter((doc) => !doc.data().read).length;
 
     return {
         postCount: posts.data().count,
         projectCount: projects.data().count,
-        messageCount: contacts.size,
-        unreadCount: unread,
+        messageCount: totalContacts.data().count,
+        unreadCount: unreadContacts.data().count,
     };
 }

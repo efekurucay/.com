@@ -1,23 +1,78 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import useSWR from 'swr';
 import { Flex, Text, SmartLink, Icon, Skeleton } from '@/once-ui/components';
 import styles from './GitHubActivity.module.scss';
-import { formatDistanceToNow } from 'date-fns';
+type Activity = {
+  type: string;
+  repo: string;
+  repoUrl: string;
+  message?: string;
+  createdAt?: string;
+};
 
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((res) => res.json());
+function formatDistanceToNow(dateString: string): string {
+  const now = Date.now();
+  const then = new Date(dateString).getTime();
+  const diffMs = Math.max(0, now - then);
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+
+  const diffYears = Math.floor(diffMonths / 12);
+  return `${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
+}
 
 const GitHubActivity = () => {
-  const { data: activity, error } = useSWR('/api/github', fetcher, {
-    refreshInterval: 300000,
-  });
+  const [activity, setActivity] = useState<Activity | null>(null);
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [timeAgo, setTimeAgo] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchActivity = async () => {
+      try {
+        const res = await fetch('/api/github', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`GitHub API failed: ${res.status}`);
+        const data = (await res.json()) as Activity;
+        if (!cancelled) {
+          setActivity(data);
+          setError(false);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchActivity();
+    const refresh = setInterval(fetchActivity, 300000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(refresh);
+    };
+  }, []);
+
+  useEffect(() => {
     if (activity?.createdAt) {
-      const update = () => setTimeAgo(formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true }));
+      const update = () => setTimeAgo(formatDistanceToNow(activity.createdAt as string));
       update();
       const interval = setInterval(update, 60000);
       return () => clearInterval(interval);
@@ -34,9 +89,11 @@ const GitHubActivity = () => {
       );
     }
 
-    if (!activity) {
+    if (loading) {
       return <Skeleton shape="block" style={{ width: '100%', height: '48px', borderRadius: 'var(--radius-s)' }} />;
     }
+
+    if (!activity) return null;
 
     let icon: React.ComponentProps<typeof Icon>['name'] = 'star';
     let text: React.ReactNode = 'Starred a repository';
