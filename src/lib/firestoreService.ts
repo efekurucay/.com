@@ -236,10 +236,10 @@ export async function getCertifications(): Promise<Certification[]> {
 export async function getVisiblePosts(): Promise<Post[]> {
     const snap = await db()
         .collection("posts")
-        .where("visible", "==", true)
         .orderBy("publishedAt", "desc")
         .get();
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
+    let posts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
+    return posts.filter(p => p.visible === true);
 }
 
 /** Get all blog posts (including hidden) for admin */
@@ -266,10 +266,10 @@ export async function getPostById(id: string): Promise<Post | null> {
 export async function getVisibleProjects(): Promise<Project[]> {
     const snap = await db()
         .collection("projects")
-        .where("visible", "==", true)
         .orderBy("publishedAt", "desc")
         .get();
-    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Project));
+    let projects = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Project));
+    return projects.filter(p => p.visible === true);
 }
 
 /** Get all projects (including hidden) for admin */
