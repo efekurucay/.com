@@ -1,6 +1,6 @@
 import { getDashboardStats, getContactMessages, getAllPosts } from "@/lib/firestoreService";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
     let stats = { postCount: 0, projectCount: 0, messageCount: 0, unreadCount: 0 };

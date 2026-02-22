@@ -13,7 +13,7 @@ interface SiteShellProps {
  */
 export default function SiteShell({ children, siteContent }: SiteShellProps) {
     const pathname = usePathname();
-    const isAdmin = pathname?.startsWith("/admin");
+    const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
 
     if (isAdmin) {
         return <>{children}</>;
