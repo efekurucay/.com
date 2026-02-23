@@ -3,6 +3,7 @@ import { Projects } from "@/components/work/Projects";
 import { baseURL } from "@/app/resources";
 import { getWorkSettings, getVisibleProjects, getPerson } from "@/lib/firestoreService";
 import { person as staticPerson, work as staticWork } from "@/app/resources/content";
+import { withTimeout } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -17,13 +18,6 @@ export async function generateMetadata() {
     openGraph: { title, description, type: "website", url: `https://${baseURL}/work/`, images: [{ url: ogImage, alt: title }] },
     twitter: { card: "summary_large_image" as const, title, description, images: [ogImage] },
   };
-}
-
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
 }
 
 export default async function Work() {

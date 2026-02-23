@@ -1,10 +1,28 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, Part } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
 import { getPortfolioContext } from "@/lib/context";
 import { Resend } from 'resend';
 import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
+
+// ── Simple in-memory rate limiter ──────────────────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT      = 20;       // max requests
+const RATE_WINDOW_MS  = 60_000;   // per 60 seconds
+
+function checkRateLimit(ip: string): boolean {
+  const now   = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+// ──────────────────────────────────────────────────────────────────────────────
 
 // Define a type for the chat history messages for better type safety
 type HistoryMessage = {
@@ -91,6 +109,11 @@ async function saveContactMessage(name: string, email: string, message: string) 
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
+  }
+
   const { prompt, history, sessionId } = await req.json();
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -145,18 +168,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Save the full conversation turn to Firestore history (optional but good practice)
-    const chatDocRef = doc(db, "chats", sessionId);
-    // Construct the history parts carefully to avoid serialization issues
+    // Save the full conversation turn to Firestore history
     const messagesToSave = [
       ...history,
       { role: "user", parts: [{ text: prompt }] },
       { role: "model", parts: [{ text: aiResponseText }] }
     ];
 
-    await setDoc(chatDocRef, {
-      messages: JSON.parse(JSON.stringify(messagesToSave)), // Simple deep copy to remove undefined values
-      updatedAt: serverTimestamp()
+    await getAdminDb().collection("chats").doc(sessionId).set({
+      messages: JSON.parse(JSON.stringify(messagesToSave)),
+      updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
 

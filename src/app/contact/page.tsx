@@ -2,6 +2,8 @@ import { getContactSettings } from "@/lib/firestoreService";
 import { contact as staticContact } from "@/app/resources/content";
 import { ContactForm } from "./ContactForm";
 
+export const revalidate = 60;
+
 export default async function ContactPage() {
   let title = staticContact.title;
   let description = staticContact.description;

@@ -26,6 +26,7 @@ import ReactMarkdown from "react-markdown";
 
 // Fallback imports for when Firestore is empty
 import { person as staticPerson, about as staticAbout, social as staticSocial } from "@/app/resources/content";
+import { withTimeout } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -62,12 +63,7 @@ export async function generateMetadata() {
   };
 }
 
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
-}
+
 
 export default async function About() {
   let person: any, about: any, social: any[], workExps: any[], orgExps: any[],

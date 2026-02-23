@@ -2,6 +2,8 @@ import { getPerson } from "@/lib/firestoreService";
 import { person as staticPerson } from "@/app/resources/content";
 import { Chat } from "./Chat";
 
+export const revalidate = 60;
+
 async function getAvatarUrl(): Promise<string> {
   try {
     const p = await Promise.race([

@@ -10,7 +10,11 @@ import {
   getEducation,
   getVisiblePosts,
   getVisibleProjects,
+  type Experience,
+  type Education,
+  type SocialLink,
 } from "@/lib/firestoreService";
+import { withTimeout } from "@/lib/utils";
 
 function getMdxFiles(dir: string): string[] {
   try {
@@ -28,13 +32,6 @@ function readMdxFile(filePath: string): string {
   } catch (e) {
     return "";
   }
-}
-
-function withTimeout<T>(promise: Promise<T>, ms = 6000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
 }
 
 export async function getPortfolioContext(): Promise<string> {
@@ -62,8 +59,8 @@ export async function getPortfolioContext(): Promise<string> {
   const personName    = person ? `${person.firstName} ${person.lastName}` : staticPerson.name;
   const personRole    = person?.role     || staticPerson.role;
   const personLocation = person?.location || staticPerson.location;
-  const socialLinks   = ((social && social.length > 0) ? social : staticSocial)
-    .map((s: any) => `${s.name}: ${s.link}`).join(", ");
+  const socialLinks = ((social && social.length > 0) ? social : staticSocial)
+    .map((s: { name: string; link: string }) => `${s.name}: ${s.link}`).join(", ");
 
   context = `
     Personal Information:
@@ -72,8 +69,8 @@ export async function getPortfolioContext(): Promise<string> {
     Location: ${personLocation}
     Contact & Social Media: ${socialLinks}
     About: ${about?.introDescription || ""}
-    Work Experience: ${workExps.map((exp: any) => `Worked at ${exp.company} as ${exp.role}. Achievements: ${(exp.achievements || []).join(", ")}`).join(". ")}
-    Education: ${education.map((inst: any) => `${inst.name} - ${inst.description}`).join(". ")}
+    Work Experience: ${workExps.map((exp: Experience) => `Worked at ${exp.company} as ${exp.role}. Achievements: ${(exp.achievements || []).join(", ")}`).join(". ")}
+    Education: ${education.map((inst: Education) => `${inst.name} - ${inst.description}`).join(". ")}
 
     ---
     `;

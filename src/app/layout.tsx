@@ -12,6 +12,7 @@ import { Source_Code_Pro } from "next/font/google";
 
 import { person as staticPerson, social as staticSocial, about as staticAbout, home as staticHome } from "@/app/resources/content";
 import { getPerson, getSocialLinks, getAbout, getHome, getSiteConfig } from "@/lib/firestoreService";
+import { withTimeout } from "@/lib/utils";
 import { Background, Column, Flex, ToastProvider } from "@/once-ui/components";
 import { Providers } from "@/app/providers";
 
@@ -97,12 +98,7 @@ type SiteConfig = {
   displayTime?: boolean;
 };
 
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
-}
+
 
 export default async function RootLayout({ children }: RootLayoutProps) {
   let personData: any;

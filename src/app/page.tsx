@@ -3,6 +3,7 @@ import { baseURL } from "@/app/resources";
 import { home as staticHome, person as staticPerson, about as staticAbout } from "@/app/resources/content";
 import HomePageClient from "@/components/HomePageClient";
 import { getHome, getPerson, getAbout, getVisibleProjects, getVisiblePosts } from "@/lib/firestoreService";
+import { withTimeout } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -24,14 +25,6 @@ export async function generateMetadata() {
     openGraph: { title, description, type: "website", url: `https://${baseURL}`, images: [{ url: ogImage, alt: title }] },
     twitter: { card: "summary_large_image" as const, title, description, images: [ogImage] },
   };
-}
-
-/** 5 saniyelik timeout — Firestore takılırsa sayfa beklemez */
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
 }
 
 export default async function Home() {

@@ -3,15 +3,9 @@ import { Posts } from "@/components/blog/Posts";
 import { baseURL } from "@/app/resources";
 import { blog as staticBlog, person as staticPerson } from "@/app/resources/content";
 import { getPerson, getBlogSettings } from "@/lib/firestoreService";
+import { withTimeout } from "@/lib/utils";
 
 export const revalidate = 60;
-
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
-}
 
 export async function generateMetadata() {
   let blogData;

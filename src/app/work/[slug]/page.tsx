@@ -5,6 +5,7 @@ import { person as staticPerson } from "@/app/resources/content";
 import { formatDate } from "@/app/utils/formatDate";
 import { getProjectBySlug, getPerson } from "@/lib/firestoreService";
 import ReactMarkdown from "react-markdown";
+import { withTimeout } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -33,13 +34,6 @@ export async function generateMetadata({ params }: WorkProjectParams) {
       images: project.images?.[0] ? [{ url: project.images[0], alt: project.title }] : [],
     },
   };
-}
-
-function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
-  ]);
 }
 
 export default async function WorkProject({ params }: WorkProjectParams) {
