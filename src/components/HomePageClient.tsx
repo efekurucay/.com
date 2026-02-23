@@ -169,9 +169,20 @@ export default function HomePageClient({ latestProject, latestPost, person, home
               </Heading>
             </RevealFx>
             <RevealFx translateY="8" delay={0.2} fillWidth horizontal="start" paddingBottom="m">
-              <Text wrap="balance" onBackground="neutral-weak" variant="heading-default-l" className={styles.subline}>
+              <Text as="div" wrap="balance" onBackground="neutral-weak" variant="heading-default-l" className={styles.subline}>
                 {typeof homeData.subline === 'string' ? (
-                  <ReactMarkdown>{homeData.subline}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => (
+                        <span style={{ display: 'block', marginBottom: '0.75em' }}>{children}</span>
+                      ),
+                      strong: ({ children }) => (
+                        <strong style={{ fontWeight: 600 }}>{children}</strong>
+                      ),
+                    }}
+                  >
+                    {homeData.subline}
+                  </ReactMarkdown>
                 ) : (
                   homeData.subline
                 )}

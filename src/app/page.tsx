@@ -26,6 +26,14 @@ export async function generateMetadata() {
   };
 }
 
+/** 5 saniyelik timeout — Firestore takılırsa sayfa beklemez */
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function Home() {
   let latestProject: any = null;
   let latestPost: any = null;
@@ -33,42 +41,61 @@ export default async function Home() {
   let homeData: any;
   let aboutData: any;
 
-  try {
-    // Try Firestore first
-    const [firestoreProjects, firestorePosts, firestorePerson, firestoreHome, firestoreAbout] = await Promise.all([
-      getVisibleProjects(),
-      getVisiblePosts(),
-      getPerson(),
-      getHome(),
-      getAbout()
+  // Promise.allSettled: bir servis çökse bile diğerleri çalışmaya devam eder
+  const [projectsResult, postsResult, personResult, homeResult, aboutResult] =
+    await Promise.allSettled([
+      withTimeout(getVisibleProjects()),
+      withTimeout(getVisiblePosts()),
+      withTimeout(getPerson()),
+      withTimeout(getHome()),
+      withTimeout(getAbout()),
     ]);
 
-    personData = firestorePerson;
-    homeData = firestoreHome;
-    aboutData = firestoreAbout;
+  const firestoreProjects =
+    projectsResult.status === "fulfilled" ? projectsResult.value : null;
+  const firestorePosts =
+    postsResult.status === "fulfilled" ? postsResult.value : null;
+  personData = personResult.status === "fulfilled" ? personResult.value : null;
+  homeData = homeResult.status === "fulfilled" ? homeResult.value : null;
+  aboutData = aboutResult.status === "fulfilled" ? aboutResult.value : null;
 
-    if (firestoreProjects && firestoreProjects.length > 0) {
-      const p = firestoreProjects[0];
-      latestProject = {
-        title: p.title, slug: p.slug, summary: p.summary,
-        images: p.images, image: p.image || "", publishedAt: p.publishedAt,
-      };
-    }
+  // Debug — sunucu loglarında görünür
+  if (projectsResult.status === "rejected")
+    console.error("[Home] getVisibleProjects failed:", projectsResult.reason);
+  if (postsResult.status === "rejected")
+    console.error("[Home] getVisiblePosts failed:", postsResult.reason);
+  if (personResult.status === "rejected")
+    console.error("[Home] getPerson failed:", personResult.reason);
+  if (homeResult.status === "rejected")
+    console.error("[Home] getHome failed:", homeResult.reason);
 
-    if (firestorePosts && firestorePosts.length > 0) {
-      const p = firestorePosts[0];
-      latestPost = {
-        title: p.title, slug: p.slug, summary: p.summary,
-        image: p.image, publishedAt: p.publishedAt,
-      };
-    }
-  } catch { }
+  console.log("[Home] projects:", firestoreProjects?.length ?? "null", "| posts:", firestorePosts?.length ?? "null");
 
-  // Fallback to static if Firestore is empty or fails
+  if (firestoreProjects && firestoreProjects.length > 0) {
+    const p = firestoreProjects[0];
+    latestProject = {
+      title: p.title, slug: p.slug, summary: p.summary,
+      images: p.images, image: p.image || "", publishedAt: p.publishedAt,
+    };
+  }
+
+  if (firestorePosts && firestorePosts.length > 0) {
+    const p = firestorePosts[0];
+    latestPost = {
+      title: p.title, slug: p.slug, summary: p.summary,
+      image: p.image, publishedAt: p.publishedAt,
+    };
+  }
+
+  // Firestore boş / başarısız olursa plain-string fallback
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
   else personData.name = `${personData.firstName} ${personData.lastName}`;
 
-  if (!homeData) homeData = staticHome;
+  if (!homeData)
+    homeData = {
+      headline: `${staticPerson.firstName} ${staticPerson.lastName}`,
+      subline: `I am ${staticPerson.firstName} ${staticPerson.lastName}, a creative and inquisitive Computer Science & Engineering student who thrives on generating innovative ideas and shaping them into impactful technologies. My focus areas include **Software Engineering**, **Artificial Intelligence**, and **Full-Stack Development**. I'm not just coding—I'm envisioning solutions that address real challenges.\n\nI am always open to new opportunities and collaborations. If you have a project in mind or just want to connect, feel free to reach out via my social media links or email.`,
+    };
   if (!aboutData) aboutData = { avatarDisplay: staticAbout.avatar.display };
 
   return (
