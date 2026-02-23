@@ -39,15 +39,24 @@ export async function generateMetadata({ params }: BlogPostParams) {
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function BlogPost({ params }: BlogPostParams) {
   const { slug } = await params;
   let post: any = null;
   let personData: any;
 
-  try {
-    post = await getPostBySlug(slug);
-    personData = await getPerson();
-  } catch { }
+  const [postRes, personRes] = await Promise.allSettled([
+    withTimeout(getPostBySlug(slug)),
+    withTimeout(getPerson()),
+  ]);
+  post       = postRes.status   === "fulfilled" ? postRes.value   : null;
+  personData = personRes.status === "fulfilled" ? personRes.value : null;
 
   if (!post) notFound();
 

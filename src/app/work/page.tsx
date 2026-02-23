@@ -19,24 +19,34 @@ export async function generateMetadata() {
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function Work() {
   let personData: any;
   let workData: any;
   let allProjects: any[] = [];
 
-  try {
-    const [person, ws, projects] = await Promise.all([
-      getPerson(), getWorkSettings(), getVisibleProjects(),
-    ]);
-    personData = person;
-    workData = ws;
-    if (projects.length > 0) {
-      allProjects = projects.map((p) => ({
-        slug: p.slug,
-        metadata: { title: p.title, summary: p.summary, images: p.images, image: p.image || "" },
-      }));
-    }
-  } catch { }
+  const [personRes, wsRes, projectsRes] = await Promise.allSettled([
+    withTimeout(getPerson()),
+    withTimeout(getWorkSettings()),
+    withTimeout(getVisibleProjects()),
+  ]);
+
+  personData  = personRes.status   === "fulfilled" ? personRes.value   : null;
+  workData    = wsRes.status       === "fulfilled" ? wsRes.value       : null;
+  const projects = projectsRes.status === "fulfilled" ? projectsRes.value : null;
+
+  if (projects && projects.length > 0) {
+    allProjects = projects.map((p) => ({
+      slug: p.slug,
+      metadata: { title: p.title, summary: p.summary, images: p.images, image: p.image || "" },
+    }));
+  }
 
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
   else personData.name = `${personData.firstName} ${personData.lastName}`;

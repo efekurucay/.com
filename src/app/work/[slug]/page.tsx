@@ -35,15 +35,24 @@ export async function generateMetadata({ params }: WorkProjectParams) {
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function WorkProject({ params }: WorkProjectParams) {
   const { slug } = await params;
   let project: any = null;
   let personData: any;
 
-  try {
-    project = await getProjectBySlug(slug);
-    personData = await getPerson();
-  } catch { }
+  const [projRes, personRes] = await Promise.allSettled([
+    withTimeout(getProjectBySlug(slug)),
+    withTimeout(getPerson()),
+  ]);
+  project    = projRes.status   === "fulfilled" ? projRes.value   : null;
+  personData = personRes.status === "fulfilled" ? personRes.value : null;
 
   if (!project) notFound();
 

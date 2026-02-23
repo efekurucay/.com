@@ -62,97 +62,75 @@ export async function generateMetadata() {
   };
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function About() {
-  // Fetch all data from Firestore with fallbacks
   let person: any, about: any, social: any[], workExps: any[], orgExps: any[],
     education: any[], skills: any[], certifications: any[];
 
-  try {
-    const [personData, aboutData, socialData, workData, orgData, eduData, skillData, certData] =
-      await Promise.all([
-        getPerson(),
-        getAbout(),
-        getSocialLinks(),
-        getExperiences("work"),
-        getExperiences("organization"),
-        getEducation(),
-        getSkills(),
-        getCertifications(),
-      ]);
+  const [personRes, aboutRes, socialRes, workRes, orgRes, eduRes, skillRes, certRes] =
+    await Promise.allSettled([
+      withTimeout(getPerson()),
+      withTimeout(getAbout()),
+      withTimeout(getSocialLinks()),
+      withTimeout(getExperiences("work")),
+      withTimeout(getExperiences("organization")),
+      withTimeout(getEducation()),
+      withTimeout(getSkills()),
+      withTimeout(getCertifications()),
+    ]);
 
-    person = personData || {
-      firstName: staticPerson.firstName,
-      lastName: staticPerson.lastName,
-      name: staticPerson.name,
-      role: staticPerson.role,
-      avatar: staticPerson.avatar,
-      location: staticPerson.location,
-      languages: staticPerson.languages,
-    };
-    if (personData) {
-      person.name = `${personData.firstName} ${personData.lastName}`;
-    }
+  const personData  = personRes.status  === "fulfilled" ? personRes.value  : null;
+  const aboutData   = aboutRes.status   === "fulfilled" ? aboutRes.value   : null;
+  const socialData  = socialRes.status  === "fulfilled" ? socialRes.value  : null;
+  const workData    = workRes.status    === "fulfilled" ? workRes.value    : null;
+  const orgData     = orgRes.status     === "fulfilled" ? orgRes.value     : null;
+  const eduData     = eduRes.status     === "fulfilled" ? eduRes.value     : null;
+  const skillData   = skillRes.status   === "fulfilled" ? skillRes.value   : null;
+  const certData    = certRes.status    === "fulfilled" ? certRes.value    : null;
 
-    about = aboutData || {
-      introTitle: staticAbout.intro.title,
-      introDescription: "",
-      tableOfContentDisplay: true,
-      avatarDisplay: true,
-      calendarDisplay: true,
-      calendarLink: "",
-      workDisplay: true,
-      workTitle: "Work Experience",
-      studiesDisplay: true,
-      studiesTitle: "Education",
-      technicalDisplay: true,
-      technicalTitle: "Technical skills",
-      organizationsDisplay: true,
-      organizationsTitle: "Organizations",
-      certificationsDisplay: true,
-      certificationsTitle: "Certifications",
-    };
+  person = personData
+    ? { ...personData, name: `${personData.firstName} ${personData.lastName}` }
+    : { firstName: staticPerson.firstName, lastName: staticPerson.lastName, name: staticPerson.name, role: staticPerson.role, avatar: staticPerson.avatar, location: staticPerson.location, languages: staticPerson.languages };
 
-    social = socialData.length > 0 ? socialData : staticSocial;
-    workExps = workData;
-    orgExps = orgData;
-    education = eduData;
-    skills = skillData;
-    certifications = certData;
-  } catch (e) {
-    // Full fallback to static content
-    person = { ...staticPerson, name: staticPerson.name };
-    about = {
-      introTitle: staticAbout.intro.title,
-      introDescription: "",
-      tableOfContentDisplay: true,
-      avatarDisplay: true,
-      calendarDisplay: true,
-      calendarLink: staticAbout.calendar.link,
-      workDisplay: true,
-      workTitle: "Work Experience",
-      studiesDisplay: true,
-      studiesTitle: "Education",
-      technicalDisplay: true,
-      technicalTitle: "Technical skills",
-      organizationsDisplay: true,
-      organizationsTitle: "Organizations",
-      certificationsDisplay: true,
-      certificationsTitle: "Certifications",
-    };
-    social = staticSocial;
-    workExps = [];
-    orgExps = [];
-    education = [];
-    skills = [];
-    certifications = [];
-  }
+  about = aboutData || {
+    introTitle: staticAbout.intro.title,
+    introDescription: "",
+    tableOfContentDisplay: true,
+    avatarDisplay: true,
+    calendarDisplay: true,
+    calendarLink: staticAbout.calendar.link,
+    workDisplay: true,
+    workTitle: "Work Experience",
+    studiesDisplay: true,
+    studiesTitle: "Education",
+    technicalDisplay: true,
+    technicalTitle: "Technical skills",
+    organizationsDisplay: true,
+    organizationsTitle: "Organizations",
+    certificationsDisplay: true,
+    certificationsTitle: "Certifications",
+  };
+
+  social        = (socialData && socialData.length > 0) ? socialData : staticSocial;
+  workExps      = workData  ?? [];
+  orgExps       = orgData   ?? [];
+  education     = eduData   ?? [];
+  skills        = skillData ?? [];
+  certifications = certData ?? [];
 
   const structure = [
-    { title: about.introTitle, display: true, items: [] },
-    { title: about.workTitle, display: about.workDisplay, items: workExps.map((e: any) => e.company) },
-    { title: about.organizationsTitle, display: about.organizationsDisplay, items: orgExps.map((e: any) => e.company) },
-    { title: about.studiesTitle, display: about.studiesDisplay, items: education.map((e: any) => e.name) },
-    { title: about.technicalTitle, display: about.technicalDisplay, items: skills.map((s: any) => s.title) },
+    { title: about.introTitle,         display: true,                                              items: [] },
+    { title: about.workTitle,          display: about.workDisplay          && workExps.length > 0, items: workExps.map((e: any) => e.company) },
+    { title: about.organizationsTitle, display: about.organizationsDisplay && orgExps.length > 0,  items: orgExps.map((e: any) => e.company) },
+    { title: about.studiesTitle,       display: about.studiesDisplay       && education.length > 0, items: education.map((e: any) => e.name) },
+    { title: about.technicalTitle,     display: about.technicalDisplay     && skills.length > 0,   items: skills.map((s: any) => s.title) },
+    { title: about.certificationsTitle, display: about.certificationsDisplay && certifications.length > 0, items: certifications.map((c: any) => c.name) },
   ];
 
   return (

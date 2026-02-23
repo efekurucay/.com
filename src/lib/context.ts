@@ -30,27 +30,42 @@ function readMdxFile(filePath: string): string {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms = 6000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export async function getPortfolioContext(): Promise<string> {
   let context = "";
 
-  try {
-    // Try Firestore first
-    const [person, about, social, workExps, education, posts, projects] = await Promise.all([
-      getPerson(),
-      getAbout(),
-      getSocialLinks(),
-      getExperiences("work"),
-      getEducation(),
-      getVisiblePosts(),
-      getVisibleProjects(),
+  const [personRes, aboutRes, socialRes, workRes, eduRes, postsRes, projectsRes] =
+    await Promise.allSettled([
+      withTimeout(getPerson()),
+      withTimeout(getAbout()),
+      withTimeout(getSocialLinks()),
+      withTimeout(getExperiences("work")),
+      withTimeout(getEducation()),
+      withTimeout(getVisiblePosts()),
+      withTimeout(getVisibleProjects()),
     ]);
 
-    const personName = person ? `${person.firstName} ${person.lastName}` : staticPerson.name;
-    const personRole = person?.role || staticPerson.role;
-    const personLocation = person?.location || staticPerson.location;
-    const socialLinks = (social.length > 0 ? social : staticSocial).map((s: any) => `${s.name}: ${s.link}`).join(", ");
+  const person   = personRes.status   === "fulfilled" ? personRes.value   : null;
+  const about    = aboutRes.status    === "fulfilled" ? aboutRes.value    : null;
+  const social   = socialRes.status   === "fulfilled" ? socialRes.value   : null;
+  const workExps = workRes.status     === "fulfilled" ? (workRes.value ?? []) : [];
+  const education = eduRes.status     === "fulfilled" ? (eduRes.value ?? []) : [];
+  const posts    = postsRes.status    === "fulfilled" ? (postsRes.value ?? []) : [];
+  const projects = projectsRes.status === "fulfilled" ? (projectsRes.value ?? []) : [];
 
-    context = `
+  const personName    = person ? `${person.firstName} ${person.lastName}` : staticPerson.name;
+  const personRole    = person?.role     || staticPerson.role;
+  const personLocation = person?.location || staticPerson.location;
+  const socialLinks   = ((social && social.length > 0) ? social : staticSocial)
+    .map((s: any) => `${s.name}: ${s.link}`).join(", ");
+
+  context = `
     Personal Information:
     Name: ${personName}
     Role: ${personRole}
@@ -63,58 +78,19 @@ export async function getPortfolioContext(): Promise<string> {
     ---
     `;
 
-    if (projects.length > 0) {
-      context += "\nProjects:\n";
-      projects.forEach((p) => {
-        context += `Project (${p.title}):\n${p.content}\n---\n`;
-      });
-    }
-
-    if (posts.length > 0) {
-      context += "\nBlog Posts:\n";
-      posts.forEach((p) => {
-        context += `Blog Post (${p.title}):\n${p.content}\n---\n`;
-      });
-    }
-
-    return context;
-  } catch (e) {
-    // Fallback to static files
+  if (projects.length > 0) {
+    context += "\nProjects:\n";
+    projects.forEach((p) => {
+      context += `Project (${p.title}):\n${p.content}\n---\n`;
+    });
   }
 
-  // Static fallback
-  const socialLinks = staticSocial.map(s => `${s.name}: ${s.link}`).join(', ');
-
-  context = `
-    Personal Information:
-    Name: ${staticPerson.name}
-    Role: ${staticPerson.role}
-    Location: ${staticPerson.location}
-    Contact & Social Media: ${socialLinks}
-    About: ${staticAbout.intro.description}
-    Work Experience: ${staticAbout.work.experiences.map((exp: any) => `Worked at ${exp.company} as ${exp.role}. Achievements: ${exp.achievements.join(', ')}`).join('. ')}
-    Education: ${staticAbout.studies.institutions.map((inst: any) => `${inst.name} - ${inst.description}`).join('. ')}
-
-    ---
-  `;
-
-  const workDir = path.join(process.cwd(), "src", "app", "work", "projects");
-  const blogDir = path.join(process.cwd(), "src", "app", "blog", "posts");
-
-  const workFiles = getMdxFiles(workDir);
-  const blogFiles = getMdxFiles(blogDir);
-
-  context += "\nProjects:\n";
-  workFiles.forEach(file => {
-    const content = readMdxFile(path.join(workDir, file));
-    context += `Project (${file}):\n${content}\n---\n`;
-  });
-
-  context += "\nBlog Posts:\n";
-  blogFiles.forEach(file => {
-    const content = readMdxFile(path.join(blogDir, file));
-    context += `Blog Post (${file}):\n${content}\n---\n`;
-  });
+  if (posts.length > 0) {
+    context += "\nBlog Posts:\n";
+    posts.forEach((p) => {
+      context += `Blog Post (${p.title}):\n${p.content}\n---\n`;
+    });
+  }
 
   return context;
 }

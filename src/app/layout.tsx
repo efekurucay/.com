@@ -97,19 +97,29 @@ type SiteConfig = {
   displayTime?: boolean;
 };
 
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export default async function RootLayout({ children }: RootLayoutProps) {
   let personData: any;
   let socialData: any;
   let aboutData: any;
   let siteConfig: SiteConfig | null = null;
 
-  try {
-    const [p, s, a, config] = await Promise.all([getPerson(), getSocialLinks(), getAbout(), getSiteConfig()]);
-    personData = p;
-    socialData = s;
-    aboutData = a;
-    siteConfig = config;
-  } catch { }
+  const [pRes, sRes, aRes, cfgRes] = await Promise.allSettled([
+    withTimeout(getPerson()),
+    withTimeout(getSocialLinks()),
+    withTimeout(getAbout()),
+    withTimeout(getSiteConfig()),
+  ]);
+  personData = pRes.status  === "fulfilled" ? pRes.value  : null;
+  socialData = sRes.status  === "fulfilled" ? sRes.value  : null;
+  aboutData  = aRes.status  === "fulfilled" ? aRes.value  : null;
+  siteConfig = cfgRes.status === "fulfilled" ? cfgRes.value : null;
 
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
   else personData.name = `${personData.firstName} ${personData.lastName}`;

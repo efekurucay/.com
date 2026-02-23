@@ -4,6 +4,15 @@ import { baseURL } from "@/app/resources";
 import { blog as staticBlog, person as staticPerson } from "@/app/resources/content";
 import { getPerson, getBlogSettings } from "@/lib/firestoreService";
 
+export const revalidate = 60;
+
+function withTimeout<T>(promise: Promise<T>, ms = 5000): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export async function generateMetadata() {
   let blogData;
   try {
@@ -42,11 +51,12 @@ export default async function Blog() {
   let blogData: any;
   let personData: any;
 
-  try {
-    const [b, p] = await Promise.all([getBlogSettings(), getPerson()]);
-    blogData = b;
-    personData = p;
-  } catch { }
+  const [bRes, pRes] = await Promise.allSettled([
+    withTimeout(getBlogSettings()),
+    withTimeout(getPerson()),
+  ]);
+  blogData   = bRes.status === "fulfilled" ? bRes.value : null;
+  personData = pRes.status === "fulfilled" ? pRes.value : null;
 
   if (!blogData) blogData = staticBlog;
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
