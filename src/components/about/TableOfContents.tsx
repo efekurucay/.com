@@ -24,64 +24,45 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ structure, about }) =
     if (element) {
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
     }
   };
 
   if (!about.tableOfContent.display) return null;
 
+  const visible = structure.filter((s) => s.display);
+
   return (
     <Column
-      left="0"
-      style={{
-        top: "50%",
-        transform: "translateY(-50%)",
-        whiteSpace: "nowrap",
-      }}
       position="fixed"
-      paddingLeft="24"
-      gap="32"
+      left="0"
+      style={{ top: "50%", transform: "translateY(-50%)", whiteSpace: "nowrap" }}
+      paddingLeft="20"
+      gap="4"
       hide="m"
     >
-      {structure
-        .filter((section) => section.display)
-        .map((section, sectionIndex) => (
-          <Column key={sectionIndex} gap="12">
-            <Flex
-              cursor="interactive"
-              className={styles.hover}
-              gap="8"
-              vertical="center"
-              onClick={() => scrollTo(section.title, 80)}
-            >
-              <Flex height="1" minWidth="16" background="neutral-strong"></Flex>
-              <Text>{section.title}</Text>
-            </Flex>
-            {about.tableOfContent.subItems && (
-              <>
-                {section.items.map((item, itemIndex) => (
-                  <Flex
-                    hide="l"
-                    key={itemIndex}
-                    style={{ cursor: "pointer" }}
-                    className={styles.hover}
-                    gap="12"
-                    paddingLeft="24"
-                    vertical="center"
-                    onClick={() => scrollTo(item, 80)}
-                  >
-                    <Flex height="1" minWidth="8" background="neutral-strong"></Flex>
-                    <Text>{item}</Text>
-                  </Flex>
-                ))}
-              </>
-            )}
-          </Column>
-        ))}
+      {visible.map((section, i) => (
+        <Flex
+          key={i}
+          cursor="interactive"
+          className={styles.hover}
+          gap="12"
+          vertical="center"
+          onClick={() => scrollTo(section.title, 80)}
+          paddingY="4"
+        >
+          <Text
+            variant="label-default-xs"
+            onBackground="brand-weak"
+            style={{ minWidth: "20px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}
+          >
+            {String(i + 1).padStart(2, "0")}
+          </Text>
+          <Text variant="label-default-s" onBackground="neutral-weak">
+            {section.title}
+          </Text>
+        </Flex>
+      ))}
     </Column>
   );
 };

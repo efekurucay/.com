@@ -1,4 +1,4 @@
-import { Column } from "@/once-ui/components";
+import { Column, Heading, Line, Text } from "@/once-ui/components";
 import { Projects } from "@/components/work/Projects";
 import { baseURL } from "@/app/resources";
 import { getWorkSettings, getVisibleProjects, getPerson } from "@/lib/firestoreService";
@@ -71,6 +71,15 @@ export default async function Work() {
           }),
         }}
       />
+      <Column gap="s" marginBottom="l">
+        <Heading variant="display-strong-s">{workData.title}</Heading>
+        {workData.description && (
+          <Text variant="body-default-l" onBackground="neutral-weak">
+            {workData.description}
+          </Text>
+        )}
+      </Column>
+      <Line marginBottom="xl" />
       <Projects />
     </Column>
   );

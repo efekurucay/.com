@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Column, Flex, Heading, SmartImage, Text, Button, Avatar } from "@/once-ui/components";
+import { Avatar, Button, Column, Flex, Heading, Line, SmartImage, Tag, Text } from "@/once-ui/components";
 import { baseURL } from "@/app/resources";
 import { person as staticPerson } from "@/app/resources/content";
 import { formatDate } from "@/app/utils/formatDate";
@@ -55,49 +55,72 @@ export default async function WorkProject({ params }: WorkProjectParams) {
     : { name: staticPerson.name, avatar: staticPerson.avatar };
 
   return (
-    <Column as="section" maxWidth="m" horizontal="center" gap="l" paddingY="l">
-      <Column maxWidth="xs" gap="16">
-        <Button href="/work" variant="tertiary" size="s" prefixIcon="chevronLeft">
-          Projects
-        </Button>
-        <Heading variant="display-strong-s">{project.title}</Heading>
+    <Column as="section" maxWidth="m" fillWidth gap="xl" paddingY="l">
+      <Button href="/work" variant="tertiary" size="s" prefixIcon="chevronLeft">
+        All Projects
+      </Button>
+      <Column gap="m">
+        <Heading variant="display-strong-l">{project.title}</Heading>
+        {project.summary && (
+          <Text variant="body-default-l" onBackground="neutral-weak">
+            {project.summary}
+          </Text>
+        )}
+        {project.tags?.length > 0 && (
+          <Flex gap="8" wrap>
+            {project.tags.map((tag: string) => (
+              <Tag key={tag} label={tag} variant="neutral" />
+            ))}
+          </Flex>
+        )}
       </Column>
-
       {project.images?.[0] && (
         <SmartImage
           priority
-          maxWidth={40}
-          className="my-20"
-          sizes="(max-width: 768px) 100vw, 720px"
+          fillWidth
+          sizes="(max-width: 768px) 100vw, 800px"
           border="neutral-alpha-weak"
-          radius="m"
+          radius="l"
           src={project.images[0]}
           alt={project.title}
           aspectRatio="16 / 9"
         />
       )}
-
-      <Flex gap="12" marginBottom="24" vertical="center">
-        {person.avatar && <Avatar size="s" src={person.avatar} />}
-        <Text variant="body-default-s" onBackground="neutral-weak">
-          {formatDate(project.publishedAt)}
-        </Text>
-        <Text variant="body-default-s" onBackground="neutral-weak">
-          {person.name}
-        </Text>
+      <Line />
+      <Flex gap="16" vertical="center" horizontal="space-between" fillWidth>
+        <Flex gap="16" vertical="center">
+          {person.avatar && <Avatar size="s" src={person.avatar} />}
+          <Column gap="4">
+            <Text variant="body-strong-s">{person.name}</Text>
+            <Text variant="body-default-s" onBackground="neutral-weak">
+              {formatDate(project.publishedAt)}
+            </Text>
+          </Column>
+        </Flex>
+        {project.link && (
+          <Button href={project.link} variant="secondary" size="s" suffixIcon="arrowUpRight">
+            View Project
+          </Button>
+        )}
       </Flex>
-
+      <Line />
       {project.team && project.team.length > 0 && (
-        <Column gap="12" marginBottom="24">
-          <Text variant="label-default-s" onBackground="neutral-weak">
-            Team
-          </Text>
-          <Flex gap="12" wrap>
+        <Column gap="m">
+          <Text variant="label-default-s" onBackground="neutral-weak">Team</Text>
+          <Flex gap="m" wrap>
             {project.team.map((member: any, i: number) => (
-              <Flex key={i} gap="8" vertical="center">
+              <Flex
+                key={i}
+                gap="12"
+                vertical="center"
+                padding="m"
+                background="surface"
+                border="neutral-alpha-weak"
+                radius="l"
+              >
                 {member.avatar && <Avatar size="s" src={member.avatar} />}
-                <Column>
-                  <Text variant="body-default-s">{member.name}</Text>
+                <Column gap="4">
+                  <Text variant="body-strong-s">{member.name}</Text>
                   <Text variant="body-default-xs" onBackground="neutral-weak">{member.role}</Text>
                 </Column>
               </Flex>
@@ -105,8 +128,7 @@ export default async function WorkProject({ params }: WorkProjectParams) {
           </Flex>
         </Column>
       )}
-
-      <Column as="article" fillWidth maxWidth="xs" gap="m">
+      <Column as="article" fillWidth gap="m">
         <div className="prose">
           <ReactMarkdown>{project.content}</ReactMarkdown>
         </div>

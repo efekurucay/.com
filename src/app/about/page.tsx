@@ -156,53 +156,17 @@ export default async function About() {
       />
 
       {about.tableOfContentDisplay && (
-        <Column
-          left="0"
-          style={{ top: "50%", transform: "translateY(-50%)" }}
-          position="fixed"
-          paddingLeft="24"
-          gap="32"
-          hide="s"
-        >
-          <TableOfContents structure={structure} about={{
-            tableOfContent: { display: true, subItems: false },
-          }} />
-        </Column>
+        <TableOfContents structure={structure} about={{
+          tableOfContent: { display: true, subItems: false },
+        }} />
       )}
 
-      <Flex fillWidth mobileDirection="column" horizontal="center">
-        {about.avatarDisplay && (
-          <Column
-            className={styles.avatar}
-            minWidth="160"
-            paddingX="l"
-            paddingBottom="xl"
-            gap="m"
-            flex={3}
-            horizontal="center"
-          >
-            <Avatar src={person.avatar} size="xl" />
-            <Flex gap="8" vertical="center">
-              <Icon onBackground="accent-weak" name="globe" />
-              {person.location}
-            </Flex>
-            {person.languages && person.languages.length > 0 && (
-              <Flex wrap gap="8">
-                {person.languages.map((language: string, index: number) => (
-                  <Tag key={index} size="l">{language}</Tag>
-                ))}
-              </Flex>
-            )}
-          </Column>
-        )}
-
-        <Column className={styles.blockAlign} flex={9} maxWidth={40} gap="xl">
-          <Column id={about.introTitle} fillWidth gap="m" paddingBottom="4">
+      <Column fillWidth gap="xl">
+          <Column id={about.introTitle} fillWidth gap="m">
             {about.calendarDisplay && about.calendarLink && (
               <Flex
                 fitWidth
                 border="brand-alpha-medium"
-                className={styles.blockAlign}
                 style={{ backdropFilter: "blur(var(--static-space-1))" }}
                 background="brand-alpha-weak"
                 radius="full"
@@ -215,14 +179,28 @@ export default async function About() {
                 <IconButton href={about.calendarLink} data-border="rounded" variant="secondary" icon="chevronRight" />
               </Flex>
             )}
-            <Heading className={styles.textAlign} variant="display-strong-l">
-              {person.name}
-            </Heading>
-            <Text className={styles.textAlign} variant="body-default-l" onBackground="neutral-weak">
-              {person.role}
-            </Text>
+            <Flex gap="l" vertical="center">
+              {about.avatarDisplay && (
+                <Avatar src={person.avatar} size="l" />
+              )}
+              <Column gap="4">
+                <Heading variant="display-strong-l">{person.name}</Heading>
+                <Text variant="body-default-l" onBackground="neutral-weak">{person.role}</Text>
+                <Flex gap="8" vertical="center">
+                  <Icon name="globe" size="s" onBackground="accent-weak" />
+                  <Text variant="body-default-s" onBackground="neutral-weak">{person.location}</Text>
+                </Flex>
+                {person.languages && person.languages.length > 0 && (
+                  <Flex gap="4" wrap paddingTop="4">
+                    {person.languages.map((language: string, index: number) => (
+                      <Tag key={index} size="s">{language}</Tag>
+                    ))}
+                  </Flex>
+                )}
+              </Column>
+            </Flex>
             {social.length > 0 && (
-              <Flex className={styles.blockAlign} paddingTop="8" gap="8" wrap>
+              <Flex paddingTop="4" gap="8" wrap>
                 {social.map((item: any) =>
                   item.link && (
                     <span key={item.name}>
@@ -368,7 +346,6 @@ export default async function About() {
             </Column>
           )}
         </Column>
-      </Flex>
     </Column>
   );
 }

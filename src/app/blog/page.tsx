@@ -1,4 +1,4 @@
-import { Column, Flex, Heading } from "@/once-ui/components";
+import { Column, Heading, Line, Text } from "@/once-ui/components";
 import { Posts } from "@/components/blog/Posts";
 import { baseURL } from "@/app/resources";
 import { blog as staticBlog, person as staticPerson } from "@/app/resources/content";
@@ -57,7 +57,7 @@ export default async function Blog() {
   else personData.name = `${personData.firstName} ${personData.lastName}`;
 
   return (
-    <Column maxWidth="s">
+    <Column maxWidth="m">
       <script
         type="application/ld+json"
         suppressHydrationWarning
@@ -80,14 +80,19 @@ export default async function Blog() {
           }),
         }}
       />
-      <Heading marginBottom="l" variant="display-strong-s">
-        {blogData.title}
-      </Heading>
+      <Column gap="s" marginBottom="l">
+        <Heading variant="display-strong-s">{blogData.title}</Heading>
+        {blogData.description && (
+          <Text variant="body-default-l" onBackground="neutral-weak">
+            {blogData.description}
+          </Text>
+        )}
+      </Column>
+      <Line marginBottom="xl" />
       <Column fillWidth flex={1}>
         <Posts range={[1, 3]} thumbnail />
         <Posts range={[4]} columns="2" />
       </Column>
-
     </Column>
   );
 }

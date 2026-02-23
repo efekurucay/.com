@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Column, Flex, Heading, SmartImage, Text, Button, Avatar } from "@/once-ui/components";
+import { Avatar, Button, Column, Flex, Heading, Line, SmartImage, Tag, Text } from "@/once-ui/components";
 import { baseURL } from "@/app/resources";
 import { person as staticPerson } from "@/app/resources/content";
 import { formatDate } from "@/app/utils/formatDate";
@@ -59,7 +59,7 @@ export default async function BlogPost({ params }: BlogPostParams) {
     : { name: staticPerson.name, avatar: staticPerson.avatar };
 
   return (
-    <Column as="section" maxWidth="m" horizontal="center" gap="l" paddingY="l">
+    <Column as="section" maxWidth="m" fillWidth gap="xl" paddingY="l">
       <script
         type="application/ld+json"
         suppressHydrationWarning
@@ -82,35 +82,48 @@ export default async function BlogPost({ params }: BlogPostParams) {
           }),
         }}
       />
-      <Column maxWidth="xs" gap="16">
-        <Button href="/blog" variant="tertiary" size="s" prefixIcon="chevronLeft">
-          Posts
-        </Button>
-        <Heading variant="display-strong-s">{post.title}</Heading>
+      <Button href="/blog" variant="tertiary" size="s" prefixIcon="chevronLeft">
+        All Posts
+      </Button>
+      <Column gap="m">
+        <Heading variant="display-strong-l">{post.title}</Heading>
+        {post.summary && (
+          <Text variant="body-default-l" onBackground="neutral-weak">
+            {post.summary}
+          </Text>
+        )}
+        {post.tags?.length > 0 && (
+          <Flex gap="8" wrap>
+            {post.tags.map((tag: string) => (
+              <Tag key={tag} label={tag} variant="neutral" />
+            ))}
+          </Flex>
+        )}
       </Column>
       {post.image && (
         <SmartImage
           priority
-          maxWidth={40}
-          className="my-20"
-          sizes="(max-width: 768px) 100vw, 720px"
+          fillWidth
+          sizes="(max-width: 768px) 100vw, 800px"
           border="neutral-alpha-weak"
-          radius="m"
+          radius="l"
           src={post.image}
           alt={post.title}
           aspectRatio="16 / 9"
         />
       )}
-      <Flex gap="12" marginBottom="24" vertical="center">
+      <Line />
+      <Flex gap="16" vertical="center">
         {person.avatar && <Avatar size="s" src={person.avatar} />}
-        <Text variant="body-default-s" onBackground="neutral-weak">
-          {formatDate(post.publishedAt)}
-        </Text>
-        <Text variant="body-default-s" onBackground="neutral-weak">
-          {person.name}
-        </Text>
+        <Column gap="4">
+          <Text variant="body-strong-s">{person.name}</Text>
+          <Text variant="body-default-s" onBackground="neutral-weak">
+            {formatDate(post.publishedAt)}
+          </Text>
+        </Column>
       </Flex>
-      <Column as="article" fillWidth maxWidth="xs" gap="m">
+      <Line />
+      <Column as="article" fillWidth gap="m">
         <div className="prose">
           <ReactMarkdown>{post.content}</ReactMarkdown>
         </div>
