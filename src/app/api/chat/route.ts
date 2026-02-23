@@ -120,9 +120,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  try {
-    const portfolioContext = await getPortfolioContext();
-    const systemInstruction = `Sen, Yahya Efe Kuruçay'ın kişisel portfolyo sitesindeki bir yapay zeka asistanısın.
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: object) =>
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+
+      try {
+        const portfolioContext = await getPortfolioContext();
+        const systemInstruction = `Sen, Yahya Efe Kuruçay'ın kişisel portfolyo sitesindeki bir yapay zeka asistanısın.
     KURALLAR:
     1. **Dil:** Tüm yanıtların sana verilen bağlamın diline uygun olmalıdır. Sorulan sorunun diline uygun cevap ver.
     2. **Kimlik:** Sen bir AI değilsin, Yahya Efe'nin asistanısın. "Sen kimsin?", "ne yaparsın?" gibi sorulara asla "Ben bir dil modeliyim" gibi cevaplar verme. Cevabın her zaman "Ben Yahya Efe'nin dijital asistanıyım." şeklinde olmalı.
@@ -133,57 +140,86 @@ export async function POST(req: NextRequest) {
     
     Bağlam:\n${portfolioContext}`;
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: systemInstruction,
-      tools: tools,
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-      ],
-    });
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+          systemInstruction,
+          tools,
+          safetySettings: [
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          ],
+        });
 
-    const chat = model.startChat({
-      history: history as HistoryMessage[],
-    });
+        const chat = model.startChat({ history: history as HistoryMessage[] });
 
-    const result = await chat.sendMessage(prompt);
-    const response = result.response;
-    const functionCalls = response.functionCalls();
+        // ── First streaming turn ──────────────────────────────────────────────
+        const streamResult = await chat.sendMessageStream(prompt);
+        let fullText = "";
 
-    let aiResponseText = response.text();
+        for await (const chunk of streamResult.stream) {
+          try {
+            const text = chunk.text();
+            if (text) {
+              fullText += text;
+              send({ type: "chunk", text });
+            }
+          } catch { /* function-call chunk — no text */ }
+        }
 
-    if (functionCalls && functionCalls.length > 0) {
-      const call = functionCalls[0];
-      if (call.name === "submit_contact_form") {
-        const { name, email, message } = call.args as { name: string; email: string; message: string; };
-        const functionResult = await saveContactMessage(name, email, message);
+        // ── Handle function calls (contact form) ─────────────────────────────
+        const finalResponse = await streamResult.response;
+        const functionCalls = finalResponse.functionCalls();
 
-        // Send the result of the function call back to the model
-        const secondResult = await chat.sendMessage(
-          [{ functionResponse: { name: "submit_contact_form", response: functionResult } }]
+        if (functionCalls && functionCalls.length > 0) {
+          const call = functionCalls[0];
+          if (call.name === "submit_contact_form") {
+            fullText = ""; // function-call turn had no visible text
+            const { name, email, message } = call.args as { name: string; email: string; message: string };
+            const functionResult = await saveContactMessage(name, email, message);
+
+            // Stream the follow-up response
+            const secondStream = await chat.sendMessageStream([
+              { functionResponse: { name: "submit_contact_form", response: functionResult } },
+            ]);
+
+            for await (const chunk of secondStream.stream) {
+              try {
+                const text = chunk.text();
+                if (text) {
+                  fullText += text;
+                  send({ type: "chunk", text });
+                }
+              } catch { /* skip */ }
+            }
+          }
+        }
+
+        // ── Persist conversation to Firestore ────────────────────────────────
+        const messagesToSave = [
+          ...history,
+          { role: "user",  parts: [{ text: prompt }] },
+          { role: "model", parts: [{ text: fullText }] },
+        ];
+        await getAdminDb().collection("chats").doc(sessionId).set(
+          { messages: JSON.parse(JSON.stringify(messagesToSave)), updatedAt: FieldValue.serverTimestamp() },
+          { merge: true }
         );
-        aiResponseText = secondResult.response.text();
+
+        send({ type: "done" });
+        controller.close();
+      } catch (error) {
+        console.error("Error in chat stream:", error);
+        send({ type: "error", message: "Failed to process chat request." });
+        controller.close();
       }
-    }
+    },
+  });
 
-    // Save the full conversation turn to Firestore history
-    const messagesToSave = [
-      ...history,
-      { role: "user", parts: [{ text: prompt }] },
-      { role: "model", parts: [{ text: aiResponseText }] }
-    ];
-
-    await getAdminDb().collection("chats").doc(sessionId).set({
-      messages: JSON.parse(JSON.stringify(messagesToSave)),
-      updatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-
-    return NextResponse.json({ text: aiResponseText });
-
-  } catch (error) {
-    console.error("Error in chat API:", error);
-    return NextResponse.json({ error: "Failed to process chat request." }, { status: 500 });
-  }
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 } 
