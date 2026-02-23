@@ -114,6 +114,10 @@
   &::-webkit-scrollbar { display: none; }
   -ms-overflow-style: none;
   scrollbar-width: none;
+
+  @media (max-width: 768px) {
+    padding: 1rem 0;
+  }
 }
 
 .welcome {
@@ -125,6 +129,11 @@
   gap: 1.5rem;
   text-align: center;
   padding: 2rem;
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+    padding: 1rem;
+  }
 }
 
 .suggestionGrid {
@@ -181,6 +190,12 @@
   border-radius: var(--radius-l);
   font-size: 0.9375rem;
   line-height: 1.6;
+
+  @media (max-width: 480px) {
+    max-width: 90%;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+  }
 }
 
 .bubbleAi {
@@ -199,6 +214,10 @@
 .inputArea {
   padding: 1rem 0 0.5rem;
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 0.625rem 0 0.375rem;
+  }
 }
 
 .inputForm {
