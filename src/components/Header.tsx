@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 import { Fade, Flex, Line, ToggleButton } from "@/once-ui/components";
 import styles from "@/components/Header.module.scss";
@@ -56,6 +57,10 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ person, display }) => {
   const pathname = usePathname() ?? "";
+  const { resolvedTheme } = useTheme();
+  const logoSrc = resolvedTheme === "light"
+    ? "/trademark/nav-icon-light.svg"
+    : "/trademark/nav-icon-dark.svg";
 
   return (
     <>
@@ -85,7 +90,9 @@ export const Header: React.FC<HeaderProps> = ({ person, display }) => {
           >
             <Flex gap="4" vertical="center" textVariant="body-default-s">
               {routes["/"] && (
-                <ToggleButton prefixIcon="home" href="/" selected={pathname === "/"} />
+                <a href="/" aria-label="Home" style={{ display: "flex", alignItems: "center", padding: "0.25rem" }}>
+                  <img src={logoSrc} alt="Logo" style={{ height: "32px", width: "auto" }} />
+                </a>
               )}
               <Line vert maxHeight="24" />
               {routes["/about"] && (
