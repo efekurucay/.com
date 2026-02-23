@@ -7,16 +7,14 @@ import { Footer, Header, RouteGuard } from "@/components";
 import SiteShell from "@/components/SiteShell";
 import { baseURL, effects as staticEffects, style as staticStyle, display as staticDisplay } from "@/app/resources";
 
-import { Inter } from "next/font/google";
-import { Source_Code_Pro } from "next/font/google";
+import { Lora, Poppins, Source_Code_Pro } from "next/font/google";
 
-import { person as staticPerson, social as staticSocial, about as staticAbout, home as staticHome } from "@/app/resources/content";
-import { getPerson, getSocialLinks, getAbout, getHome, getSiteConfig } from "@/lib/firestoreService";
+import { person as staticPerson, social as staticSocial, home as staticHome } from "@/app/resources/content";
+import { getPerson, getSocialLinks, getHome, getSiteConfig } from "@/lib/firestoreService";
 import { withTimeout } from "@/lib/utils";
 import { Background, Column, Flex, ToastProvider } from "@/once-ui/components";
 import { Providers } from "@/app/providers";
 
-// ... existing generateMetadata code ...
 export async function generateMetadata() {
   let homeData;
   let personData;
@@ -55,18 +53,20 @@ export async function generateMetadata() {
   };
 }
 
-const primary = Inter({
+const primary = Lora({
   variable: "--font-primary",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
-type FontConfig = {
-  variable: string;
-};
-
-const secondary: FontConfig | undefined = undefined;
-const tertiary: FontConfig | undefined = undefined;
+const secondary = Poppins({
+  variable: "--font-secondary",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
 
 const code = Source_Code_Pro({
   variable: "--font-code",
@@ -103,18 +103,15 @@ type SiteConfig = {
 export default async function RootLayout({ children }: RootLayoutProps) {
   let personData: any;
   let socialData: any;
-  let aboutData: any;
   let siteConfig: SiteConfig | null = null;
 
-  const [pRes, sRes, aRes, cfgRes] = await Promise.allSettled([
+  const [pRes, sRes, cfgRes] = await Promise.allSettled([
     withTimeout(getPerson()),
     withTimeout(getSocialLinks()),
-    withTimeout(getAbout()),
     withTimeout(getSiteConfig()),
   ]);
-  personData = pRes.status  === "fulfilled" ? pRes.value  : null;
-  socialData = sRes.status  === "fulfilled" ? sRes.value  : null;
-  aboutData  = aRes.status  === "fulfilled" ? aRes.value  : null;
+  personData = pRes.status   === "fulfilled" ? pRes.value   : null;
+  socialData = sRes.status   === "fulfilled" ? sRes.value   : null;
   siteConfig = cfgRes.status === "fulfilled" ? cfgRes.value : null;
 
   if (!personData) personData = { ...staticPerson, name: staticPerson.name };
@@ -126,8 +123,6 @@ export default async function RootLayout({ children }: RootLayoutProps) {
     icon: s.icon ? s.icon.toLowerCase() : s.name ? s.name.toLowerCase() : "",
     link: s.link
   }));
-
-  if (!aboutData) aboutData = staticAbout;
 
   const styleConfig = {
     ...staticStyle,
@@ -172,8 +167,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       data-scaling={styleConfig.scaling}
       className={classNames(
         primary.variable,
-        secondary ? secondary.variable : "",
-        tertiary ? tertiary.variable : "",
+        secondary.variable,
         code.variable,
       )}
     >
