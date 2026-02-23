@@ -5,7 +5,7 @@ const routes: { [key: string]: boolean } = {
   "/about": true,
   "/work": true,
   "/blog": true,
-  "/chat": true,
+  "/chat": false,
   "/contact": true,
   "/admin": true,
 };

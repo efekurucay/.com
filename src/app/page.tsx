@@ -5,6 +5,18 @@ import HomePageClient from "@/components/HomePageClient";
 import { getHome, getPerson, getAbout, getVisibleProjects, getVisiblePosts } from "@/lib/firestoreService";
 import { withTimeout } from "@/lib/utils";
 
+async function getAvatarUrl(): Promise<string> {
+  try {
+    const p = await Promise.race([
+      getPerson(),
+      new Promise<null>((r) => setTimeout(() => r(null), 4000)),
+    ]);
+    return p?.avatar || staticPerson.avatar;
+  } catch {
+    return staticPerson.avatar;
+  }
+}
+
 export const revalidate = 60;
 
 export async function generateMetadata() {
@@ -35,13 +47,14 @@ export default async function Home() {
   let aboutData: any;
 
   // Promise.allSettled: bir servis çökse bile diğerleri çalışmaya devam eder
-  const [projectsResult, postsResult, personResult, homeResult, aboutResult] =
+  const [projectsResult, postsResult, personResult, homeResult, aboutResult, avatarResult] =
     await Promise.allSettled([
       withTimeout(getVisibleProjects()),
       withTimeout(getVisiblePosts()),
       withTimeout(getPerson()),
       withTimeout(getHome()),
       withTimeout(getAbout()),
+      getAvatarUrl(),
     ]);
 
   const firestoreProjects =
@@ -51,6 +64,7 @@ export default async function Home() {
   personData = personResult.status === "fulfilled" ? personResult.value : null;
   homeData = homeResult.status === "fulfilled" ? homeResult.value : null;
   aboutData = aboutResult.status === "fulfilled" ? aboutResult.value : null;
+  const avatarUrl = avatarResult.status === "fulfilled" ? avatarResult.value : staticPerson.avatar;
 
 
 
@@ -82,6 +96,6 @@ export default async function Home() {
   if (!aboutData) aboutData = { avatarDisplay: staticAbout.avatar.display };
 
   return (
-    <HomePageClient latestProject={latestProject} latestPost={latestPost} person={personData} homeData={homeData} aboutData={aboutData} />
+    <HomePageClient latestProject={latestProject} latestPost={latestPost} person={personData} homeData={homeData} aboutData={aboutData} avatarUrl={avatarUrl} />
   );
 }
