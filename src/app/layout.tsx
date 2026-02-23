@@ -31,6 +31,10 @@ export async function generateMetadata() {
     metadataBase: new URL(`https://${baseURL}`),
     title: title,
     description: description,
+    icons: {
+      icon: "/trademark/icon-light.svg",
+      apple: "/trademark/icon-light.svg",
+    },
     openGraph: {
       title: `${personName}'s Portfolio`,
       description: "Portfolio website showcasing my work.",
