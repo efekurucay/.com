@@ -287,7 +287,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             rows={1}
             onChange={(e) => { setInput(e.target.value); autoResize(); }}
             onKeyDown={handleKeyDown}
-            disabled={isDisabled}
+            disabled={isLoading}
           />
           <button
             type="submit"

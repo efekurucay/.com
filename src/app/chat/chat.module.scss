@@ -206,7 +206,7 @@
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--neutral-alpha-medium);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
@@ -224,7 +224,7 @@
   background: transparent;
   color: var(--neutral-on-background-strong);
   font-family: var(--font-primary);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   resize: none;
   min-height: 1.5rem;
@@ -240,8 +240,8 @@
 
 .sendBtn {
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: var(--radius-full);
   border: none;
   background: var(--brand-solid-strong);
