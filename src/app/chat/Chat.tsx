@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useSearchParams } from 'next/navigation';
-import { Column, Flex, Input, Button, Avatar, Spinner } from "@/once-ui/components";
+import { Avatar, Spinner, Flex, Text, Heading } from "@/once-ui/components";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
-import { Icon } from "@/once-ui/components";
 import styles from './chat.module.scss';
 
 type DisplayMessage = {
@@ -18,6 +17,13 @@ type HistoryMessage = {
   parts: { text: string }[];
 };
 
+const suggestions = [
+  "Tell me about your projects",
+  "What technologies do you use?",
+  "What are your strongest skills?",
+  "How can I contact you?",
+];
+
 function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const searchParams = useSearchParams();
   const [sessionId, setSessionId] = useState("");
@@ -25,53 +31,48 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryHandledRef = useRef(false);
-
-  const suggestions = [
-    "Tell me about your projects.",
-    "What technologies do you use?",
-    "How can I get in touch with you?",
-  ];
 
   useEffect(() => {
     setSessionId(Date.now().toString() + Math.random().toString(36).substring(2));
-    setDisplayMessages([{
-      text: "Hello! I'm Yahya Efe's digital assistant. Feel free to ask me anything about his projects, experiences, or any other topic.",
-      sender: "ai"
-    }]);
   }, []);
 
   useEffect(() => {
     if (!searchParams || !sessionId || queryHandledRef.current) return;
     const starterQuery = searchParams.get('q');
-    if (starterQuery) { handleSendMessage(starterQuery); queryHandledRef.current = true; }
+    if (starterQuery) {
+      handleSendMessage(starterQuery);
+      queryHandledRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, sessionId]);
 
   useEffect(() => {
-    if (!isLoading && inputRef.current) inputRef.current.focus();
-  }, [isLoading]);
-
-  useEffect(() => {
-    if (chatContainerRef.current)
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages, isLoading]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); handleSendMessage(); }
+  useEffect(() => {
+    if (!isLoading && textareaRef.current) textareaRef.current.focus();
+  }, [isLoading]);
+
+  const autoResize = () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
   };
 
-  const handleSendMessage = async (promptOverride?: string) => {
+  const handleSendMessage = useCallback(async (promptOverride?: string) => {
     const prompt = promptOverride || input;
-    if (prompt.trim() === "" || isLoading || !sessionId) return;
+    if (!prompt.trim() || isLoading || !sessionId) return;
 
-    setShowSuggestions(false);
     setDisplayMessages(prev => [...prev, { text: prompt, sender: "user" }]);
     const currentInput = prompt;
     const currentHistory = history;
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setIsLoading(true);
 
     try {
@@ -92,65 +93,105 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
         { role: "model", parts: [{ text: aiResponseText }] },
       ]);
     } catch {
-      setDisplayMessages(prev => [...prev, { text: "Sorry, an error occurred. Please try again.", sender: "ai" }]);
+      setDisplayMessages(prev => [
+        ...prev,
+        { text: "Sorry, an error occurred. Please try again.", sender: "ai" },
+      ]);
     } finally {
       setIsLoading(false);
     }
+  }, [input, isLoading, sessionId, history]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
+  const isEmpty = displayMessages.length === 0 && !isLoading;
+
   return (
-    <Column maxWidth="m" fillWidth gap="l" style={{ height: '70vh' }}>
-      <Flex ref={chatContainerRef} flex={1} direction="column" gap="l" style={{ overflowY: 'auto', paddingRight: '1rem' }}>
-        {displayMessages.map((message, index) => (
-          <Flex key={index} gap="16" align="start" direction={message.sender === "user" ? "row-reverse" : "row"}>
-            <Avatar size="l" src={message.sender === "ai" ? avatarUrl : undefined}>
-              {message.sender === 'user' && <Icon name="person" size="m" />}
-            </Avatar>
-            <Flex background={message.sender === "ai" ? "surface" : "brand-alpha-strong"} radius="l" paddingX="l" paddingY="m" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-              <ChatMessageContent content={message.text} />
-            </Flex>
-          </Flex>
-        ))}
-        {isLoading && (
-          <Flex gap="16" align="start" direction="row">
-            <Avatar size="l" src={avatarUrl} />
-            <Flex background="surface" radius="l" paddingX="l" paddingY="m" align="center" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-              <TypingIndicator />
-            </Flex>
-          </Flex>
+    <div className={styles.chatWrapper}>
+      <div className={styles.messagesArea}>
+        {isEmpty ? (
+          <div className={styles.welcome}>
+            <Avatar size="xl" src={avatarUrl} />
+            <div>
+              <Heading variant="heading-strong-l">How can I help you?</Heading>
+              <Text variant="body-default-m" onBackground="neutral-weak">
+                Ask me anything about Efe — his projects, skills, or background.
+              </Text>
+            </div>
+            <div className={styles.suggestionGrid}>
+              {suggestions.map((s) => (
+                <button key={s} className={styles.suggestionChip} onClick={() => handleSendMessage(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {displayMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={`${styles.messageRow} ${msg.sender === "user" ? styles.messageRowUser : ""}`}
+              >
+                <div className={styles.avatarSmall}>
+                  <Avatar size="s" src={msg.sender === "ai" ? avatarUrl : undefined} />
+                </div>
+                <div className={`${styles.bubble} ${msg.sender === "ai" ? styles.bubbleAi : styles.bubbleUser}`}>
+                  <ChatMessageContent content={msg.text} />
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className={styles.messageRow}>
+                <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
+                <div className={`${styles.bubble} ${styles.bubbleAi}`}>
+                  <TypingIndicator />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </>
         )}
-      </Flex>
-      {showSuggestions && (
-        <Flex gap="8" align="center" horizontal="center" wrap style={{ padding: '0 1rem' }}>
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              onClick={() => handleSendMessage(suggestion)}
-              style={{ padding: '8px 16px', borderRadius: '16px', border: '1px solid var(--neutral-strong)', backgroundColor: 'var(--surface)', color: 'var(--text-default)', cursor: 'pointer', fontSize: '14px', transition: 'background-color 0.2s' }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--neutral-weak)'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--surface)'}
-            >
-              {suggestion}
-            </button>
-          ))}
-        </Flex>
-      )}
-      <Flex as="form" gap="16" vertical="center" className={styles.chatForm} onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
-        <Flex fillWidth>
-          <Input
-            ref={inputRef}
-            id="chat-input"
-            placeholder="Ask me anything..."
-            aria-label="Ask me anything..."
+      </div>
+
+      <div className={styles.inputArea}>
+        <form
+          className={styles.inputForm}
+          onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+        >
+          <textarea
+            ref={textareaRef}
+            className={styles.textarea}
+            placeholder="Message Efe's AI..."
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            rows={1}
+            onChange={(e) => { setInput(e.target.value); autoResize(); }}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
           />
+          <button
+            type="submit"
+            className={styles.sendBtn}
+            disabled={isLoading || !input.trim()}
+            aria-label="Send"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 4l8 8-8 8V4z" transform="rotate(-90 12 12)" />
+            </svg>
+          </button>
+        </form>
+        <Flex horizontal="center" paddingTop="8">
+          <Text variant="body-default-xs" onBackground="neutral-weak">
+            AI may make mistakes. Double-check important info.
+          </Text>
         </Flex>
-        <Button type="submit" label="↑" aria-label="Send" prefixIcon="chevronUp" disabled={isLoading} />
-      </Flex>
-    </Column>
+      </div>
+    </div>
   );
 }
 
