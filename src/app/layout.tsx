@@ -36,7 +36,7 @@ export async function generateMetadata() {
     openGraph: {
       title: `${personName}'s Portfolio`,
       description: "Portfolio website showcasing my work.",
-      url: baseURL,
+      url: `https://${baseURL}`,
       siteName: `${personName}'s Portfolio`,
       locale: "en_US",
       type: "website",

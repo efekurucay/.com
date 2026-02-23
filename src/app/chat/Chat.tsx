@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
-import { Column, Flex, Input, Button, Avatar } from "@/once-ui/components";
+import { Column, Flex, Input, Button, Avatar, Spinner } from "@/once-ui/components";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { Icon } from "@/once-ui/components";
@@ -156,7 +156,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
 export function Chat({ avatarUrl }: { avatarUrl: string }) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<Flex fillWidth paddingY="128" horizontal="center"><Spinner /></Flex>}>
       <ChatInner avatarUrl={avatarUrl} />
     </Suspense>
   );

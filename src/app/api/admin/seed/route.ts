@@ -12,6 +12,11 @@ import matter from "gray-matter";
  * Headers: { "x-seed-key": "<SEED_API_KEY>" }
  */
 export async function POST(req: NextRequest) {
+    // Disabled in production
+    if (process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Not available in production" }, { status: 403 });
+    }
+
     // Verify seed key
     const seedKey = req.headers.get("x-seed-key");
     const expectedKey = process.env.SEED_API_KEY;

@@ -1,9 +1,12 @@
 import { Flex, IconButton, SmartLink, Text } from "@/once-ui/components";
 import styles from "./Footer.module.scss";
+import type { PersonData, SocialLink } from "@/lib/firestoreService";
+
+type PersonShape = Partial<PersonData> & { name?: string };
 
 interface FooterProps {
-  person: any;
-  social: any[];
+  person: PersonShape;
+  social: Array<Partial<SocialLink> & { name: string; icon: string; link: string }>;
 }
 
 export const Footer: React.FC<FooterProps> = ({ person, social }) => {

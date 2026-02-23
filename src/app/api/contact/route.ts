@@ -6,7 +6,23 @@ import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Simple in-memory rate limiter: 5 submissions per IP per 10 minutes
+const rlMap = new Map<string, { count: number; resetAt: number }>();
+function checkContactRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rlMap.get(ip);
+  if (!entry || now > entry.resetAt) { rlMap.set(ip, { count: 1, resetAt: now + 600_000 }); return true; }
+  if (entry.count >= 5) return false;
+  entry.count++;
+  return true;
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
+  if (!checkContactRateLimit(ip)) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   try {
     const { name, email, message } = await req.json();
 

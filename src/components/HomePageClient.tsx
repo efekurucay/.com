@@ -22,6 +22,7 @@ import GitHubActivity from "@/components/GitHubActivity";
 import NeuralNetworkCanvas from "@/components/NeuralNetworkCanvas";
 import styles from './HomePageClient.module.scss';
 import ReactMarkdown from "react-markdown";
+import type { PersonData, HomeData, AboutData } from "@/lib/firestoreService";
 
 interface Content {
   slug: string;
@@ -31,12 +32,14 @@ interface Content {
   image?: string;
 }
 
+type PersonShape = PersonData & { name: string; avatar: string };
+
 interface HomePageClientProps {
   latestProject: Content | null;
   latestPost: Content | null;
-  person: any;
-  homeData: any;
-  aboutData: any;
+  person: PersonShape;
+  homeData: HomeData & { headline: string; subline: string };
+  aboutData: AboutData | { avatarDisplay: boolean };
 }
 
 export default function HomePageClient({ latestProject, latestPost, person, homeData, aboutData }: HomePageClientProps) {

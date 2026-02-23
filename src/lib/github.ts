@@ -4,14 +4,13 @@ const LATEST_ACTIVITY_ENDPOINT = `https://api.github.com/users/${GITHUB_USERNAME
 export const getLatestActivity = async () => {
   try {
     const url = `${LATEST_ACTIVITY_ENDPOINT}?t=${new Date().getTime()}`;
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        // You can add a GitHub Personal Access Token here if needed
-        // 'Authorization': `token ${process.env.GITHUB_TOKEN}`,
-      },
-      cache: 'no-store',
-    });
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    if (process.env.GITHUB_TOKEN) {
+      headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+    const response = await fetch(url, { headers, cache: 'no-store' });
 
     if (!response.ok) {
       console.error('Failed to fetch GitHub activity:', response.statusText);

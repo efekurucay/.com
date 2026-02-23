@@ -64,14 +64,13 @@ async function saveContactMessage(name: string, email: string, message: string) 
       minute: '2-digit'
     });
 
-    // 1. Save to Firebase
-    const contactDocRef = doc(db, "contacts", email + "_" + Date.now());
-    await setDoc(contactDocRef, {
+    // 1. Save to Firebase (admin SDK)
+    await getAdminDb().collection("contacts").doc(email + "_" + Date.now()).set({
       name,
       email,
       message,
-      source: "ai_chat", // AI chat'ten geldiğini belirtmek için
-      createdAt: serverTimestamp(),
+      source: "ai_chat",
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     // 2. Send email notification (same as contact form)

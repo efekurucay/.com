@@ -42,8 +42,12 @@ const TimeDisplay: React.FC<TimeDisplayProps> = ({ timeZone, locale = "en-GB" })
 
 export default TimeDisplay;
 
+import type { PersonData } from "@/lib/firestoreService";
+
+type PersonShape = Partial<PersonData> & { name?: string; firstName?: string; location?: string };
+
 interface HeaderProps {
-  person: any;
+  person: PersonShape;
   display: {
     location: boolean;
     time: boolean;
