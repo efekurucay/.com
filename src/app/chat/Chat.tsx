@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense, useCallback } from "react";
+import React, { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useSearchParams } from 'next/navigation';
 import { Avatar, Spinner, Flex, Text, Heading } from "@/once-ui/components";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
@@ -22,6 +22,45 @@ const suggestions = [
   "What technologies do you use?",
   "What are your strongest skills?",
   "How can I contact you?",
+];
+
+const contactActions: { label: string; icon: React.ReactNode }[] = [
+  {
+    label: "I want to reach Efe",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 5.49 5.49l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    label: "I have a message for Efe",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Let's work together",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    label: "What's Efe's email?",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
+      </svg>
+    ),
+  },
 ];
 
 function ChatInner({ avatarUrl }: { avatarUrl: string }) {
@@ -187,6 +226,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const isDisabled = isLoading || isStreaming;
 
   return (
+    <div className={styles.outerWrapper}>
     <div className={styles.chatWrapper}>
       <div className={styles.messagesArea}>
         {isEmpty ? (
@@ -265,7 +305,41 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             AI may make mistakes. Double-check important info.
           </Text>
         </Flex>
+
+        {/* Mobile contact shortcuts */}
+        <div className={styles.mobileContactRow}>
+          {contactActions.map((action) => (
+            <button
+              key={action.label}
+              className={styles.mobileContactBtn}
+              onClick={() => handleSendMessage(action.label)}
+              disabled={isDisabled}
+            >
+              {action.icon}
+              {action.label}
+            </button>
+          ))}
+        </div>
       </div>
+    </div>
+
+      {/* Desktop contact sidebar */}
+      <aside className={styles.contactPanel}>
+        <p className={styles.contactPanelTitle}>Quick contact</p>
+        {contactActions.map((action, i) => (
+          <React.Fragment key={action.label}>
+            {i === 2 && <div className={styles.contactPanelDivider} />}
+            <button
+              className={styles.contactActionBtn}
+              onClick={() => handleSendMessage(action.label)}
+              disabled={isDisabled}
+            >
+              {action.icon}
+              {action.label}
+            </button>
+          </React.Fragment>
+        ))}
+      </aside>
     </div>
   );
 }

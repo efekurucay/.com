@@ -1,10 +1,109 @@
+.outerWrapper {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  height: calc(100vh - 10rem);
+  padding: 0 1rem;
+  align-items: stretch;
+}
+
 .chatWrapper {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 10rem);
+  flex: 1;
+  min-width: 0;
+}
+
+.contactPanel {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1.75rem;
+
+  @media (max-width: 860px) {
+    display: none;
+  }
+}
+
+.contactPanelTitle {
+  font-size: 0.75rem;
+  font-family: var(--font-primary);
+  color: var(--neutral-on-background-weak);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.contactActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   width: 100%;
-  max-width: 48rem;
-  margin: 0 auto;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-l);
+  border: 1px solid var(--neutral-alpha-medium);
+  background: var(--color-surface);
+  color: var(--neutral-on-background-medium);
+  font-size: 0.8125rem;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: var(--brand-alpha-strong);
+    background: var(--neutral-alpha-weak);
+    color: var(--neutral-on-background-strong);
+  }
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+}
+
+.contactPanelDivider {
+  height: 1px;
+  background: var(--neutral-alpha-weak);
+  margin: 0.25rem 0;
+}
+
+.mobileContactRow {
+  display: none;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0 0.25rem;
+
+  @media (max-width: 860px) {
+    display: flex;
+  }
+}
+
+.mobileContactBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--neutral-alpha-medium);
+  background: var(--color-surface);
+  color: var(--neutral-on-background-medium);
+  font-size: 0.75rem;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: var(--brand-alpha-strong);
+    background: var(--neutral-alpha-weak);
+  }
 }
 
 .messagesArea {
