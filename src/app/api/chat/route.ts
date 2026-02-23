@@ -8,11 +8,11 @@ import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
 
 // ── Simple in-memory rate limiter ──────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT      = 20;       // max requests
-const RATE_WINDOW_MS  = 60_000;   // per 60 seconds
+const RATE_LIMIT = 20;       // max requests
+const RATE_WINDOW_MS = 60_000;   // per 60 seconds
 
 function checkRateLimit(ip: string): boolean {
-  const now   = Date.now();
+  const now = Date.now();
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash-lite",
+          model: "gemini-3-flash-preview",
           systemInstruction,
           tools,
           safetySettings: [
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
         // ── Persist conversation to Firestore ────────────────────────────────
         const messagesToSave = [
           ...history,
-          { role: "user",  parts: [{ text: prompt }] },
+          { role: "user", parts: [{ text: prompt }] },
           { role: "model", parts: [{ text: fullText }] },
         ];
         await getAdminDb().collection("chats").doc(sessionId).set(
