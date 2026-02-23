@@ -59,17 +59,7 @@ export default async function Home() {
   homeData = homeResult.status === "fulfilled" ? homeResult.value : null;
   aboutData = aboutResult.status === "fulfilled" ? aboutResult.value : null;
 
-  // Debug — sunucu loglarında görünür
-  if (projectsResult.status === "rejected")
-    console.error("[Home] getVisibleProjects failed:", projectsResult.reason);
-  if (postsResult.status === "rejected")
-    console.error("[Home] getVisiblePosts failed:", postsResult.reason);
-  if (personResult.status === "rejected")
-    console.error("[Home] getPerson failed:", personResult.reason);
-  if (homeResult.status === "rejected")
-    console.error("[Home] getHome failed:", homeResult.reason);
 
-  console.log("[Home] projects:", firestoreProjects?.length ?? "null", "| posts:", firestorePosts?.length ?? "null");
 
   if (firestoreProjects && firestoreProjects.length > 0) {
     const p = firestoreProjects[0];
