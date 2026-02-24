@@ -7,6 +7,7 @@ import {
   Text,
   Button,
   Heading,
+  Icon,
 } from "@/once-ui/components";
 import { baseURL } from "@/app/resources";
 
@@ -83,11 +84,12 @@ export default function HomePageClient({ latestProject, latestPost, person, home
 
           {/* Contact */}
           <div className={styles.sidebarCard}>
+            <Icon name="mail" size="xs" onBackground="neutral-weak" className={styles.showOnlyOnMobile} />
             <Heading as="h2" variant="heading-strong-s" className={styles.mobileChipText}>
               Get in touch
             </Heading>
             <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.hideOnMobile}>
-              Have a project in mind or just want to say hi? I'd love to hear from you.
+              Have a project in mind or just want to say hi? I&apos;d love to hear from you.
             </Text>
             <Button href="/contact" variant="secondary" size="s" className={styles.hideOnMobile} style={{ marginTop: 'auto' }}>
               Contact
@@ -102,7 +104,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
               </Heading>
               <Flex as="div" gap="s" vertical="center" style={{ flexGrow: 1, width: '100%' }} className={styles.cardContentRow}>
                 {latestProject.images && latestProject.images.length > 0 && (
-                  <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
+                  <div className={styles.hideOnMobile} style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
                     <Image
                       src={latestProject.images[0]}
                       alt={latestProject.title}
@@ -113,7 +115,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
                 )}
                 <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }} className={styles.cardContentText}>
                   <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.mobileChipText}>{latestProject.title}</Text>
-                  <Button href={`/work/${latestProject.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
+                  <Button href={`/work/${latestProject.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }} className={styles.hideOnMobile}>
                     View
                   </Button>
                 </Flex>
@@ -129,7 +131,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
               </Heading>
               <Flex as="div" gap="s" vertical="center" style={{ flexGrow: 1, width: '100%' }} className={styles.cardContentRow}>
                 {latestPost.image && (
-                  <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
+                  <div className={styles.hideOnMobile} style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
                     <Image
                       src={latestPost.image}
                       alt={latestPost.title}
@@ -140,7 +142,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
                 )}
                 <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }} className={styles.cardContentText}>
                   <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.mobileChipText}>{latestPost.title}</Text>
-                  <Button href={`/blog/${latestPost.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
+                  <Button href={`/blog/${latestPost.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }} className={styles.hideOnMobile}>
                     Read
                   </Button>
                 </Flex>

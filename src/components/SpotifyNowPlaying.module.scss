@@ -29,10 +29,9 @@
   object-fit: cover;
 
   @media (max-width: 768px) {
-    width: 24px !important;
-    height: 24px !important;
+    width: 22px !important;
+    height: 22px !important;
     border-radius: 50% !important;
-    margin-left: -0.5rem;
   }
 }
 

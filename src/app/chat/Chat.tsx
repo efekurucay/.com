@@ -188,7 +188,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   setIsStreaming(false);
                   setHistory(prev => [
                     ...prev,
-                    { role: "user",  parts: [{ text: currentInput }] },
+                    { role: "user", parts: [{ text: currentInput }] },
                     { role: "model", parts: [{ text: fullTextRef.current }] },
                   ]);
                 }
@@ -227,101 +227,101 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
   return (
     <div className={styles.outerWrapper}>
-    <div className={styles.chatWrapper}>
-      <div className={styles.messagesArea}>
-        {isEmpty ? (
-          <div className={styles.welcome}>
-            <Avatar size="xl" src={avatarUrl} />
-            <div>
-              <Heading variant="heading-strong-l">How can I help you?</Heading>
-              <Text variant="body-default-m" onBackground="neutral-weak">
-                Ask me anything about Efe — his projects, skills, or background.
-              </Text>
+      <div className={styles.chatWrapper}>
+        <div className={styles.messagesArea}>
+          {isEmpty ? (
+            <div className={styles.welcome}>
+              <div className={styles.avatarWelcome}><Avatar size="xl" src={avatarUrl} /></div>
+              <div>
+                <Heading variant="heading-strong-l">How can I help you?</Heading>
+                <Text variant="body-default-m" onBackground="neutral-weak">
+                  Ask me anything about Efe — his projects, skills, or background.
+                </Text>
+              </div>
+              <div className={styles.suggestionGrid}>
+                {suggestions.map((s) => (
+                  <button key={s} className={styles.suggestionChip} onClick={() => handleSendMessage(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className={styles.suggestionGrid}>
-              {suggestions.map((s) => (
-                <button key={s} className={styles.suggestionChip} onClick={() => handleSendMessage(s)}>
-                  {s}
-                </button>
+          ) : (
+            <>
+              {displayMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`${styles.messageRow} ${msg.sender === "user" ? styles.messageRowUser : ""}`}
+                >
+                  <div className={styles.avatarSmall}>
+                    <Avatar size="s" src={msg.sender === "ai" ? avatarUrl : undefined} />
+                  </div>
+                  <div className={`${styles.bubble} ${msg.sender === "ai" ? styles.bubbleAi : styles.bubbleUser}`}>
+                    <ChatMessageContent content={msg.text} />
+                  </div>
+                </div>
               ))}
-            </div>
-          </div>
-        ) : (
-          <>
-            {displayMessages.map((msg, i) => (
-              <div
-                key={i}
-                className={`${styles.messageRow} ${msg.sender === "user" ? styles.messageRowUser : ""}`}
-              >
-                <div className={styles.avatarSmall}>
-                  <Avatar size="s" src={msg.sender === "ai" ? avatarUrl : undefined} />
+              {isLoading && (
+                <div className={styles.messageRow}>
+                  <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
+                  <div className={`${styles.bubble} ${styles.bubbleAi}`}>
+                    <TypingIndicator />
+                  </div>
                 </div>
-                <div className={`${styles.bubble} ${msg.sender === "ai" ? styles.bubbleAi : styles.bubbleUser}`}>
-                  <ChatMessageContent content={msg.text} />
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className={styles.messageRow}>
-                <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
-                <div className={`${styles.bubble} ${styles.bubbleAi}`}>
-                  <TypingIndicator />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
+              )}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
 
-      <div className={styles.inputArea}>
-        <form
-          className={styles.inputForm}
-          onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-        >
-          <textarea
-            ref={textareaRef}
-            className={styles.textarea}
-            placeholder="Message Efe's AI..."
-            value={input}
-            rows={1}
-            onChange={(e) => { setInput(e.target.value); autoResize(); }}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            className={styles.sendBtn}
-            disabled={isDisabled || !input.trim()}
-            aria-label="Send"
+        <div className={styles.inputArea}>
+          <form
+            className={styles.inputForm}
+            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
           >
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 4l8 8-8 8V4z" transform="rotate(-90 12 12)" />
-            </svg>
-          </button>
-        </form>
-        <Flex horizontal="center" paddingTop="8">
-          <Text variant="body-default-xs" onBackground="neutral-weak">
-            AI may make mistakes. Double-check important info.
-          </Text>
-        </Flex>
-
-        {/* Mobile contact shortcuts */}
-        <div className={styles.mobileContactRow}>
-          {contactActions.map((action) => (
+            <textarea
+              ref={textareaRef}
+              className={styles.textarea}
+              placeholder="Message Efe's AI..."
+              value={input}
+              rows={1}
+              onChange={(e) => { setInput(e.target.value); autoResize(); }}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+            />
             <button
-              key={action.label}
-              className={styles.mobileContactBtn}
-              onClick={() => handleSendMessage(action.label)}
-              disabled={isDisabled}
+              type="submit"
+              className={styles.sendBtn}
+              disabled={isDisabled || !input.trim()}
+              aria-label="Send"
             >
-              {action.icon}
-              {action.label}
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 4l8 8-8 8V4z" transform="rotate(-90 12 12)" />
+              </svg>
             </button>
-          ))}
+          </form>
+          <Flex horizontal="center" paddingTop="8">
+            <Text variant="body-default-xs" onBackground="neutral-weak">
+              AI may make mistakes. Double-check important info.
+            </Text>
+          </Flex>
+
+          {/* Mobile contact shortcuts */}
+          <div className={styles.mobileContactRow}>
+            {contactActions.map((action) => (
+              <button
+                key={action.label}
+                className={styles.mobileContactBtn}
+                onClick={() => handleSendMessage(action.label)}
+                disabled={isDisabled}
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Desktop contact sidebar */}
       <aside className={styles.contactPanel}>

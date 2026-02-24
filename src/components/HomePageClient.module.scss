@@ -9,15 +9,16 @@
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     padding: 0;
-    height: calc(100dvh - 10rem);
+    height: calc(100dvh - 8rem);
     padding-bottom: 5rem;
+    overflow: hidden;
   }
 
   @media (max-width: 480px) {
-    height: calc(100dvh - 8rem);
-    padding-bottom: 5.5rem;
+    height: calc(100dvh - 7.5rem);
+    padding-bottom: 5rem;
   }
 }
 
@@ -39,10 +40,8 @@
   scrollbar-width: none;
 
   @media (max-width: 768px) {
-    width: 100vw;
-    margin-left: -1rem;
-    margin-right: -1rem;
-    padding: 0.5rem 1rem;
+    width: 100%;
+    padding: 0 1rem;
     height: auto;
     flex-direction: row;
     overflow-x: auto;
@@ -60,11 +59,6 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-
-  @media (max-width: 480px) {
-    height: auto;
-    padding: 0.5rem 1rem;
-  }
 }
 
 .sidebarCard {
@@ -80,26 +74,20 @@
   @media (max-width: 768px) {
     flex-direction: row;
     align-items: center;
-    justify-content: center;
-    min-width: max-content;
-    max-width: none;
-    height: 38px;
-    padding: 0 0.875rem;
+    justify-content: flex-start;
+    width: auto;
+    flex-shrink: 0;
+    height: 36px;
+    padding: 0 0.75rem;
     border-radius: 999px;
     overflow: hidden;
     scroll-snap-align: start;
-    gap: 0.5rem;
+    gap: 0.4rem;
     background: var(--neutral-alpha-weak);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--neutral-alpha-medium);
-  }
-
-  @media (max-width: 480px) {
-    min-width: max-content;
-    max-width: none;
-    height: 44px;
-    padding: 0 0.875rem;
+    white-space: nowrap;
   }
 }
 
@@ -109,12 +97,20 @@
   }
 }
 
+.showOnlyOnMobile {
+  display: none !important;
+
+  @media (max-width: 768px) {
+    display: flex !important;
+  }
+}
+
 .mobileChipText {
   @media (max-width: 768px) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 140px;
+    max-width: 160px;
     font-size: 0.8125rem !important;
     font-weight: 500 !important;
     line-height: 1 !important;
@@ -124,21 +120,8 @@
 
 .cardContentRow {
   @media (max-width: 768px) {
-    gap: 0.5rem !important;
-
-    img {
-      width: 24px !important;
-      height: 24px !important;
-      border-radius: 50% !important;
-      margin-left: -0.5rem !important;
-      object-fit: cover !important;
-    }
-
-    div[style*="40px"] {
-      width: 24px !important;
-      height: 24px !important;
-      margin-left: -0.5rem !important;
-    }
+    gap: 0.4rem !important;
+    align-items: center !important;
   }
 }
 
@@ -146,9 +129,8 @@
   @media (max-width: 768px) {
     flex-direction: row !important;
     align-items: center !important;
-    gap: 0.5rem !important;
+    gap: 0.4rem !important;
 
-    // Hide buttons inside the chip to save space
     button {
       display: none !important;
     }
@@ -165,5 +147,6 @@
     flex: 1;
     min-height: 0;
     height: auto;
+    overflow: hidden;
   }
 }
