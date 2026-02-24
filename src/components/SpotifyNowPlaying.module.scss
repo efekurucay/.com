@@ -65,16 +65,21 @@
   span:nth-of-type(3) {
     animation-delay: -0.8s;
   }
+
   span:nth-of-type(4) {
     animation-delay: -0.6s;
   }
 }
 
 @keyframes bounce {
-  0%, 40%, 100% {
+
+  0%,
+  40%,
+  100% {
     transform: scaleY(0.2);
     transform-origin: bottom;
   }
+
   20% {
     transform: scaleY(1.0);
     transform-origin: bottom;
@@ -91,10 +96,38 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-4px);
+  }
+}
+
+.hideOnMobile {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.showOnlyOnMobile {
+  display: none !important;
+
+  @media (max-width: 768px) {
+    display: block !important;
+  }
+}
+
+.mobileChipText {
+  @media (max-width: 768px) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    font-size: var(--font-size-s) !important;
+    margin: 0 !important;
   }
 }

@@ -45,4 +45,21 @@
 .time {
   font-size: var(--font-size-xs);
   color: var(--color-text-neutral-dim);
-} 
+}
+
+.hideOnMobile {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.mobileChipText {
+  @media (max-width: 768px) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    font-size: var(--font-size-s) !important;
+    margin: 0 !important;
+  }
+}

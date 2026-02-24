@@ -83,7 +83,7 @@ const GitHubActivity = () => {
     if (error) {
       return (
         <Flex gap="s" vertical="center">
-          <Icon name="github" size="l" onBackground="neutral-weak"/>
+          <Icon name="github" size="l" onBackground="neutral-weak" />
           <Text onBackground="neutral-weak" size="s">Could not load activity.</Text>
         </Flex>
       );
@@ -117,26 +117,26 @@ const GitHubActivity = () => {
         text = 'Starred a repository';
         break;
     }
-    
+
     return (
       <Flex direction="column" gap="xs">
         <Flex gap="s" vertical="start">
-          <Icon name={icon} onBackground="neutral-weak" style={{flexShrink: 0, marginTop: '2px'}}/>
-          <Flex direction="column" gap="xs">
-            <Text onBackground="neutral-strong" size="s" wrap="balance">
-                {text}{' '}
-                <SmartLink href={activity.repoUrl} target="_blank" className={styles.link}>
-                    {activity.repo}
-                </SmartLink>
+          <Icon name={icon} onBackground="neutral-weak" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <Flex direction="column" gap="xs" className="github-content-stack">
+            <Text onBackground="neutral-strong" size="s" wrap="balance" className={styles.mobileChipText}>
+              {text}{' '}
+              <SmartLink href={activity.repoUrl} target="_blank" className={styles.link}>
+                {activity.repo}
+              </SmartLink>
             </Text>
             {activity.message && (
-                <Text onBackground="neutral-weak" size="xs" className={styles.message}>
-                    {activity.message}
-                </Text>
+              <Text onBackground="neutral-weak" size="xs" className={`${styles.message} ${styles.hideOnMobile}`}>
+                {activity.message}
+              </Text>
             )}
           </Flex>
         </Flex>
-        {timeAgo && <Text onBackground="neutral-weak" size="xs" style={{alignSelf: 'flex-end'}}>{timeAgo}</Text>}
+        {timeAgo && <Text onBackground="neutral-weak" size="xs" style={{ alignSelf: 'flex-end' }} className={styles.hideOnMobile}>{timeAgo}</Text>}
       </Flex>
     );
   };

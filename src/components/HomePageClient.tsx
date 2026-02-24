@@ -67,7 +67,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
 
           {/* Spotify */}
           <div className={styles.sidebarCard}>
-            <Text variant="label-strong-s" onBackground="neutral-weak">
+            <Text variant="label-strong-s" onBackground="neutral-weak" className={styles.hideOnMobile}>
               Now playing
             </Text>
             <NowPlaying />
@@ -75,7 +75,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
 
           {/* GitHub */}
           <div className={styles.sidebarCard}>
-            <Text variant="label-strong-s" onBackground="neutral-weak">
+            <Text variant="label-strong-s" onBackground="neutral-weak" className={styles.hideOnMobile}>
               GitHub Activity
             </Text>
             <GitHubActivity />
@@ -83,10 +83,10 @@ export default function HomePageClient({ latestProject, latestPost, person, home
 
           {/* Contact */}
           <div className={styles.sidebarCard}>
-            <Heading as="h2" variant="heading-strong-s">
+            <Heading as="h2" variant="heading-strong-s" className={styles.mobileChipText}>
               Get in touch
             </Heading>
-            <Text onBackground="neutral-weak" size="s" wrap="balance">
+            <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.hideOnMobile}>
               Have a project in mind or just want to say hi? I'd love to hear from you.
             </Text>
             <Button href="/contact" variant="secondary" size="s" style={{ marginTop: 'auto' }}>
@@ -97,10 +97,10 @@ export default function HomePageClient({ latestProject, latestPost, person, home
           {/* Latest Project */}
           {latestProject && (
             <div className={styles.sidebarCard}>
-              <Heading as="h2" variant="heading-strong-s">
+              <Heading as="h2" variant="heading-strong-s" className={styles.hideOnMobile}>
                 Latest Project
               </Heading>
-              <Flex as="div" gap="s" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
+              <Flex as="div" gap="s" vertical="center" style={{ flexGrow: 1, width: '100%' }} className={styles.cardContentRow}>
                 {latestProject.images && latestProject.images.length > 0 && (
                   <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
                     <Image
@@ -111,8 +111,8 @@ export default function HomePageClient({ latestProject, latestPost, person, home
                     />
                   </div>
                 )}
-                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
-                  <Text onBackground="neutral-weak" size="s" wrap="balance">{latestProject.title}</Text>
+                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }} className={styles.cardContentText}>
+                  <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.mobileChipText}>{latestProject.title}</Text>
                   <Button href={`/work/${latestProject.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
                     View
                   </Button>
@@ -124,10 +124,10 @@ export default function HomePageClient({ latestProject, latestPost, person, home
           {/* Latest Blog */}
           {latestPost && (
             <div className={styles.sidebarCard}>
-              <Heading as="h2" variant="heading-strong-s">
+              <Heading as="h2" variant="heading-strong-s" className={styles.hideOnMobile}>
                 Latest Blog
               </Heading>
-              <Flex as="div" gap="s" vertical="start" style={{ flexGrow: 1, width: '100%' }}>
+              <Flex as="div" gap="s" vertical="center" style={{ flexGrow: 1, width: '100%' }} className={styles.cardContentRow}>
                 {latestPost.image && (
                   <div style={{ position: 'relative', width: '40px', height: '40px', flexShrink: 0, borderRadius: 'var(--radius-m)', overflow: 'hidden' }}>
                     <Image
@@ -138,8 +138,8 @@ export default function HomePageClient({ latestProject, latestPost, person, home
                     />
                   </div>
                 )}
-                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }}>
-                  <Text onBackground="neutral-weak" size="s" wrap="balance">{latestPost.title}</Text>
+                <Flex direction="column" gap="xs" style={{ flexGrow: 1, minHeight: '100%' }} className={styles.cardContentText}>
+                  <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.mobileChipText}>{latestPost.title}</Text>
                   <Button href={`/blog/${latestPost.slug}`} variant="secondary" size="s" style={{ marginTop: 'auto' }}>
                     Read
                   </Button>

@@ -45,9 +45,10 @@ const NowPlaying = () => {
 
   if (!song || !song.title) {
     return (
-       <Flex gap="s" vertical="center">
-        <Icon name="spotify" size="l" onBackground="neutral-weak" />
-        <Text variant="body-default-m" onBackground="neutral-weak">
+      <Flex gap="s" vertical="center">
+        <div className={styles.hideOnMobile}><Icon name="spotify" size="l" onBackground="neutral-weak" /></div>
+        <div className={styles.showOnlyOnMobile}><Icon name="spotify" size="m" onBackground="neutral-weak" /></div>
+        <Text variant="body-default-m" onBackground="neutral-weak" className={styles.mobileChipText}>
           Not playing
         </Text>
       </Flex>
@@ -55,37 +56,37 @@ const NowPlaying = () => {
   }
 
   return (
-    <SmartLink 
-      href={song.songUrl} 
-      target="_blank" 
+    <SmartLink
+      href={song.songUrl}
+      target="_blank"
       rel="noopener noreferrer"
-      style={{textDecoration: 'none', width: '100%'}}
+      style={{ textDecoration: 'none', width: '100%' }}
     >
       <Flex gap="s" vertical="center">
         {song.albumImageUrl && (
-          <Image 
-            src={song.albumImageUrl} 
+          <Image
+            src={song.albumImageUrl}
             alt={song.album || 'Album Art'}
             width={48}
             height={48}
-            style={{ borderRadius: 'var(--radius-s)'}}
+            style={{ borderRadius: 'var(--radius-s)' }}
           />
         )}
         <Flex direction="column" style={{ minWidth: 0, flexGrow: 1 }}>
-           <Flex as="div" vertical="center" gap="s">
-            <Text as="p" variant="body-strong-m" onBackground="neutral-strong" className={styles.truncate}>
+          <Flex as="div" vertical="center" gap="s">
+            <Text as="p" variant="body-strong-m" onBackground="neutral-strong" className={`${styles.truncate} ${styles.mobileChipText}`}>
               {song.title}
             </Text>
             {song.isPlaying && (
-              <Icon 
-                name="spotify" 
-                size="m" 
-                onBackground="brand-strong" 
+              <Icon
+                name="spotify"
+                size="m"
+                onBackground="brand-strong"
                 className={styles.spotifyIconPlaying}
               />
             )}
           </Flex>
-          <Text as="p" variant="body-default-m" onBackground="neutral-weak" className={styles.truncate}>
+          <Text as="p" variant="body-default-m" onBackground="neutral-weak" className={`${styles.truncate} ${styles.hideOnMobile}`}>
             {song.artist}
           </Text>
         </Flex>
