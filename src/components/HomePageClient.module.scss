@@ -39,12 +39,14 @@
   scrollbar-width: none;
 
   @media (max-width: 768px) {
-    width: 100%;
+    width: 100vw;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 0.5rem 1rem;
     height: auto;
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 0.5rem 1rem;
     flex-shrink: 0;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
@@ -81,12 +83,16 @@
     justify-content: center;
     min-width: max-content;
     max-width: none;
-    height: 48px;
-    padding: 0 1rem;
-    border-radius: 999px; // pill shape
+    height: 38px;
+    padding: 0 0.875rem;
+    border-radius: 999px;
     overflow: hidden;
     scroll-snap-align: start;
     gap: 0.5rem;
+    background: var(--neutral-alpha-weak);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--neutral-alpha-medium);
   }
 
   @media (max-width: 480px) {
@@ -108,25 +114,30 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
-    font-size: 0.875rem !important;
+    max-width: 140px;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
     margin: 0 !important;
   }
 }
 
 .cardContentRow {
   @media (max-width: 768px) {
-    gap: 0.375rem !important;
+    gap: 0.5rem !important;
 
     img {
-      width: 28px !important;
-      height: 28px !important;
+      width: 24px !important;
+      height: 24px !important;
+      border-radius: 50% !important;
+      margin-left: -0.5rem !important;
+      object-fit: cover !important;
     }
 
     div[style*="40px"] {
-      // target the image container
-      width: 28px !important;
-      height: 28px !important;
+      width: 24px !important;
+      height: 24px !important;
+      margin-left: -0.5rem !important;
     }
   }
 }

@@ -124,7 +124,7 @@ const GitHubActivity = () => {
           <Icon name={icon} onBackground="neutral-weak" style={{ flexShrink: 0, marginTop: '2px' }} />
           <Flex direction="column" gap="xs" className="github-content-stack">
             <Text onBackground="neutral-strong" size="s" wrap="balance" className={styles.mobileChipText}>
-              {text}{' '}
+              <span className={styles.hideOnMobile}>{text}{' '}</span>
               <SmartLink href={activity.repoUrl} target="_blank" className={styles.link}>
                 {activity.repo}
               </SmartLink>

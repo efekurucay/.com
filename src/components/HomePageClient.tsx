@@ -89,7 +89,7 @@ export default function HomePageClient({ latestProject, latestPost, person, home
             <Text onBackground="neutral-weak" size="s" wrap="balance" className={styles.hideOnMobile}>
               Have a project in mind or just want to say hi? I'd love to hear from you.
             </Text>
-            <Button href="/contact" variant="secondary" size="s" style={{ marginTop: 'auto' }}>
+            <Button href="/contact" variant="secondary" size="s" className={styles.hideOnMobile} style={{ marginTop: 'auto' }}>
               Contact
             </Button>
           </div>

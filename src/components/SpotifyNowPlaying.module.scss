@@ -27,6 +27,13 @@
   border-radius: var(--radius-s);
   flex-shrink: 0;
   object-fit: cover;
+
+  @media (max-width: 768px) {
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    margin-left: -0.5rem;
+  }
 }
 
 .songInfo {
@@ -117,7 +124,8 @@
   display: none !important;
 
   @media (max-width: 768px) {
-    display: block !important;
+    display: flex !important;
+    margin-left: -0.25rem;
   }
 }
 

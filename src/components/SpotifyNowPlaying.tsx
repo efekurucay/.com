@@ -70,6 +70,7 @@ const NowPlaying = () => {
             width={48}
             height={48}
             style={{ borderRadius: 'var(--radius-s)' }}
+            className={styles.albumImage}
           />
         )}
         <Flex direction="column" style={{ minWidth: 0, flexGrow: 1 }}>
