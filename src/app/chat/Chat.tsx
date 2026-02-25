@@ -77,6 +77,9 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [isWaitingForHuman, setIsWaitingForHuman] = useState(false); // controls spinner
   const [isLiveHandoff, setIsLiveHandoff] = useState(false);          // stays true all session
   const [isHumanTyping, setIsHumanTyping] = useState(false);          // brief typing indicator for Efe
+  const [userName, setUserName] = useState<string | null>(null);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [nameInputValue, setNameInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryHandledRef = useRef(false);
@@ -315,8 +318,10 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [liveChatDismissed, setLiveChatDismissed] = useState(false);
   const showLiveChatPrompt = userMessageCount >= 3 && !isLiveHandoff && !liveChatDismissed && !isLoading && !isStreaming;
 
-  const handleStartLiveChat = useCallback(async () => {
+  const handleStartLiveChat = useCallback(async (providedName?: string) => {
     if (isLiveHandoff || !sessionId) return;
+    const nameToSend = providedName || userName || undefined;
+
     handoffInitiatedRef.current = true;
     setIsLoading(true);
 
@@ -324,7 +329,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: "Canlı sohbet isteği", history, sessionId, forceHandoff: true }),
+        body: JSON.stringify({ prompt: "Canlı sohbet isteği", history, sessionId, forceHandoff: true, userName: nameToSend }),
       });
 
       if (!response.ok || !response.body) throw new Error("Bad response");
@@ -349,13 +354,28 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             setIsLoading(false);
             setIsWaitingForHuman(true);
             setIsLiveHandoff(true);
+            setShowNameInput(false);
+          } else if (parsed.type === "name_needed") {
+            // API couldn't find name in history — ask user
+            setIsLoading(false);
+            handoffInitiatedRef.current = false;
+            setShowNameInput(true);
           }
         }
       }
     } catch {
       setIsLoading(false);
+      handoffInitiatedRef.current = false;
     }
-  }, [sessionId, history, isLiveHandoff]);
+  }, [sessionId, history, isLiveHandoff, userName]);
+
+  const handleNameSubmit = useCallback(() => {
+    const name = nameInputValue.trim();
+    if (!name) return;
+    setUserName(name);
+    setShowNameInput(false);
+    handleStartLiveChat(name);
+  }, [nameInputValue, handleStartLiveChat]);
 
   const isEmpty = displayMessages.length === 0 && !isLoading;
   const isDisabled = isLoading || isStreaming;
@@ -414,12 +434,41 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                 <div className={styles.liveChatPrompt}>
                   <span>Efe ile canlı sohbete geçmek ister misiniz?</span>
                   <div className={styles.liveChatPromptActions}>
-                    <button className={styles.liveChatPromptYes} onClick={handleStartLiveChat}>
+                    <button className={styles.liveChatPromptYes} onClick={() => handleStartLiveChat()}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
                       Evet, bağlan
                     </button>
                     <button className={styles.liveChatPromptNo} onClick={() => setLiveChatDismissed(true)}>
                       Hayır
+                    </button>
+                  </div>
+                </div>
+              )}
+              {showNameInput && (
+                <div className={styles.nameInputPrompt}>
+                  <span>Canlı sohbete bağlanmak için adınızı girin:</span>
+                  <div className={styles.nameInputRow}>
+                    <input
+                      className={styles.nameInput}
+                      type="text"
+                      placeholder="Adınız"
+                      value={nameInputValue}
+                      onChange={(e) => setNameInputValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleNameSubmit(); }}
+                      autoFocus
+                    />
+                    <button
+                      className={styles.liveChatPromptYes}
+                      onClick={handleNameSubmit}
+                      disabled={!nameInputValue.trim()}
+                    >
+                      Bağlan
+                    </button>
+                    <button
+                      className={styles.liveChatPromptNo}
+                      onClick={() => { setShowNameInput(false); handoffInitiatedRef.current = false; }}
+                    >
+                      Vazgeç
                     </button>
                   </div>
                 </div>
@@ -498,7 +547,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       <aside className={styles.contactPanel}>
         <button
           className={styles.liveChatBtn}
-          onClick={handleStartLiveChat}
+          onClick={() => handleStartLiveChat()}
           disabled={isLiveHandoff || isDisabled}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

@@ -123,6 +123,49 @@
   }
 }
 
+// ── Name input prompt ────────────────────────────────────────────
+.nameInputPrompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  margin: 0.5rem 0;
+  border-radius: var(--radius-l);
+  border: 1px solid rgba(42, 171, 238, 0.25);
+  background: rgba(42, 171, 238, 0.05);
+  font-size: 0.8125rem;
+  font-family: var(--font-primary);
+  color: var(--neutral-on-background-medium);
+  animation: promptFadeIn 0.3s ease-out;
+}
+
+.nameInputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nameInput {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--neutral-alpha-medium);
+  background: var(--color-surface);
+  color: var(--neutral-on-background-strong);
+  font-size: 0.8125rem;
+  font-family: var(--font-primary);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: #2AABEE;
+  }
+
+  &::placeholder {
+    color: var(--neutral-on-background-weak);
+  }
+}
+
 @keyframes promptFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

@@ -126,6 +126,37 @@ async function saveContactMessage(name: string, email: string, message: string) 
   }
 }
 
+// ── Extract user name from chat history ───────────────────────────────────────
+async function extractUserName(
+  apiKey: string,
+  history: HistoryMessage[]
+): Promise<string | null> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    const recentMessages = history
+      .slice(-10)
+      .map((m) => `${m.role}: ${m.parts[0]?.text?.slice(0, 300)}`)
+      .join("\n");
+
+    if (!recentMessages.trim()) return null;
+
+    const prompt = `Extract the user's first name from this conversation if they mentioned it. Only return the name, nothing else. If no name was mentioned, return exactly "NONE".
+
+Conversation:
+${recentMessages}`;
+
+    const result = await model.generateContent(prompt);
+    const name = result.response.text().trim();
+    if (!name || name === "NONE" || name.length > 50) return null;
+    return name;
+  } catch {
+    return null;
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ── Unknown Question Detection Tool ───────────────────────────────────────────
 interface UnknownDetectionResult {
   unknown: boolean;
@@ -220,7 +251,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
   }
 
-  const { prompt, history, sessionId, forceHandoff } = await req.json();
+  const { prompt, history, sessionId, forceHandoff, userName } = await req.json();
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || !sessionId || !prompt) {
@@ -241,8 +272,8 @@ export async function POST(req: NextRequest) {
 
         if (existingHandoff?.status === "live") {
           // Live mode: relay user message to Telegram, skip AI entirely
-          const name = getSessionName(sessionId);
-          const telegramText = `👤 ${name}: ${prompt}`;
+          const displayName = existingHandoff.displayName || getSessionName(sessionId);
+          const telegramText = `👤 ${displayName}: ${prompt}`;
           const relayedMsgId = await sendTelegramMessage(telegramText, existingHandoff.telegramMessageId ?? undefined);
 
           // Register this new message ID so Efe can reply to it and still hit the right session
@@ -273,7 +304,21 @@ export async function POST(req: NextRequest) {
 
         // ── [0.5] Manual live chat request ──────────────────────────────
         if (forceHandoff) {
-          const name = getSessionName(sessionId);
+          // Resolve display name: explicit userName > extract from history > session code name
+          let displayName: string | null = userName || null;
+          if (!displayName) {
+            displayName = await extractUserName(apiKey, history as HistoryMessage[]);
+          }
+          if (!displayName) {
+            // No name found — ask client to collect it
+            send({ type: "name_needed" });
+            send({ type: "done" });
+            controller.close();
+            return;
+          }
+
+          const codeName = getSessionName(sessionId);
+          const name = `${displayName} (${codeName})`;
           const recentContext = (history as HistoryMessage[])
             .slice(-6)
             .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
@@ -295,6 +340,7 @@ export async function POST(req: NextRequest) {
                 question: prompt,
                 context: recentContext,
                 telegramMessageId,
+                displayName,
                 requestedAt: now,
                 answeredAt: null,
                 humanReply: null,
@@ -342,7 +388,14 @@ export async function POST(req: NextRequest) {
           // ── Human Handoff: Telegram notification & go live ──────────
           if (unknownInfo.confidence >= 75) {
             if (!existingHandoff || existingHandoff.status !== "live") {
-              const name = getSessionName(sessionId);
+              // Try to find user's real name from history
+              let displayName: string | null = userName || null;
+              if (!displayName) {
+                displayName = await extractUserName(apiKey, history as HistoryMessage[]);
+              }
+              const codeName = getSessionName(sessionId);
+              const name = displayName ? `${displayName} (${codeName})` : codeName;
+
               const recentContext = (history as HistoryMessage[])
                 .slice(-6)
                 .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
@@ -365,6 +418,7 @@ export async function POST(req: NextRequest) {
                     question: prompt,
                     context: recentContext,
                     telegramMessageId,
+                    displayName: displayName || codeName,
                     requestedAt: now,
                     answeredAt: null,
                     humanReply: null,
