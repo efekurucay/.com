@@ -224,7 +224,17 @@ export async function POST(req: NextRequest) {
         if (existingHandoff?.status === "live") {
           // Live mode: relay user message to Telegram, skip AI entirely
           const telegramText = `👤 Kullanıcı: ${prompt}`;
-          await sendTelegramMessage(telegramText, existingHandoff.telegramMessageId ?? undefined);
+          const relayedMsgId = await sendTelegramMessage(telegramText, existingHandoff.telegramMessageId ?? undefined);
+
+          // Register this new message ID so Efe can reply to it and still hit the right session
+          if (relayedMsgId) {
+            getAdminDb().collection("handoffSessions").add({
+              sessionId,
+              telegramMessageId: relayedMsgId,
+              status: "live",
+              requestedAt: new Date().toISOString(),
+            }).catch(() => {});
+          }
 
           // Save user message to Firestore
           await getAdminDb().collection("chats").doc(sessionId).set(
