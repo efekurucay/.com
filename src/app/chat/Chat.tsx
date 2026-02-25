@@ -74,7 +74,8 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);   // waiting for first chunk
   const [isStreaming, setIsStreaming] = useState(false); // typing animation running
-  const [isWaitingForHuman, setIsWaitingForHuman] = useState(false);
+  const [isWaitingForHuman, setIsWaitingForHuman] = useState(false); // controls spinner
+  const [isLiveHandoff, setIsLiveHandoff] = useState(false);          // stays true all session
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryHandledRef = useRef(false);
@@ -111,9 +112,10 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   }, [isLoading, isStreaming]);
 
   // Firestore listener for live handoff — watches messages array for new human replies
+  // Uses isLiveHandoff (not isWaitingForHuman) so it stays alive after Efe's first reply
   const seenMessageCountRef = useRef<number>(0);
   useEffect(() => {
-    if (!isWaitingForHuman || !sessionId) return;
+    if (!isLiveHandoff || !sessionId) return;
 
     const unsubscribe = onSnapshot(doc(db, "chats", sessionId), (snap) => {
       const data = snap.data();
@@ -129,7 +131,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       if (newHumanMsgs.length > 0) {
         seenMessageCountRef.current = humanMsgs.length;
 
-        // Hide the waiting indicator on first reply
+        // Hide the waiting spinner on first reply
         setIsWaitingForHuman(false);
 
         newHumanMsgs.forEach((m) => {
@@ -145,7 +147,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
     });
 
     return () => unsubscribe();
-  }, [isWaitingForHuman, sessionId]);
+  }, [isLiveHandoff, sessionId]);
 
   const autoResize = () => {
     const ta = textareaRef.current;
@@ -160,7 +162,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
     const currentInput = prompt;
     const currentHistory = history;
-    const isLive = isWaitingForHuman;
+    const isLive = isLiveHandoff;  // use isLiveHandoff, not isWaitingForHuman
 
     // Reset animation state
     streamBufferRef.current = "";
@@ -251,6 +253,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             }
           } else if (parsed.type === "handoff_initiated") {
             setIsWaitingForHuman(true);
+            setIsLiveHandoff(true);  // keep listener alive for whole session
             // Add a system announcement that Efe has joined
             setDisplayMessages((prev) => [
               ...prev,
@@ -280,7 +283,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
       setDisplayMessages(prev => [...prev, { text: "Sorry, an error occurred. Please try again.", sender: "ai" }]);
     }
-  }, [input, isLoading, isStreaming, sessionId, history, isWaitingForHuman]);
+  }, [input, isLoading, isStreaming, sessionId, history, isWaitingForHuman, isLiveHandoff]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
