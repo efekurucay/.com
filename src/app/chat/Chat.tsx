@@ -83,6 +83,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const isApiDoneRef = useRef(false);
   const fullTextRef = useRef("");
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const handoffInitiatedRef = useRef(false); // sync flag to prevent "No response received"
 
   // Cleanup interval on unmount
   useEffect(() => () => {
@@ -252,6 +253,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
               }, 12);
             }
           } else if (parsed.type === "handoff_initiated") {
+            handoffInitiatedRef.current = true; // sync flag — checked before state updates
             setIsWaitingForHuman(true);
             setIsLiveHandoff(true);  // keep listener alive for whole session
             // Add a system announcement that Efe has joined
@@ -272,8 +274,8 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
       if (!messageAdded) {
         setIsLoading(false);
-        // In live mode after handoff_initiated, no AI message is expected for initial trigger
-        if (!isWaitingForHuman) {
+        // handoffInitiatedRef is sync — reliable even before React state flushes
+        if (!handoffInitiatedRef.current) {
           setDisplayMessages(prev => [...prev, { text: "No response received.", sender: "ai" }]);
         }
       }
