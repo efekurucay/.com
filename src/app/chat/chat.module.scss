@@ -228,6 +228,33 @@
   }
 }
 
+.mobileLiveChatBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  border: 1px solid #2AABEE;
+  background: rgba(42, 171, 238, 0.08);
+  color: #2AABEE;
+  font-size: 0.75rem;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    background: rgba(42, 171, 238, 0.15);
+    box-shadow: 0 0 8px rgba(42, 171, 238, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
 .mobileContactBtn {
   display: flex;
   align-items: center;

@@ -529,6 +529,16 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
           {/* Mobile contact shortcuts */}
           <div className={styles.mobileContactRow}>
+            <button
+              className={styles.mobileLiveChatBtn}
+              onClick={() => handleStartLiveChat()}
+              disabled={isLiveHandoff || isDisabled}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.5 3.44 1.36 4.86L2.1 21.3a.75.75 0 0 0 .9.9l4.44-1.26A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" />
+              </svg>
+              {isLiveHandoff ? "Canlı sohbet aktif" : "Live Chat"}
+            </button>
             {contactActions.map((action) => (
               <button
                 key={action.label}
