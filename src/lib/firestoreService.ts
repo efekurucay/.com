@@ -329,13 +329,15 @@ export interface UnknownEvent {
 }
 
 export interface HandoffData {
-    status: "pending" | "answered" | "expired";
+    status: "live" | "answered" | "expired";
     question: string;
     context: string;
     telegramMessageId: number | null;
     requestedAt: string;
     answeredAt: string | null;
     humanReply: string | null;
+    lastReply?: string | null;
+    lastReplyAt?: string | null;
 }
 
 export interface ChatLog {

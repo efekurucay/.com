@@ -100,7 +100,7 @@ export default async function AILogsPage() {
                     { label: "Avg Eval Score", value: avgScore != null ? `${avgScore}/10` : "—", icon: "⭐", color: "#f59e0b" },
                     { label: "Low-Score Responses", value: belowThresholdCount, icon: "⚠️", color: "#ef4444" },
                     { label: "Unknown Questions", value: unknownEvents.length, icon: "🔍", color: "#8b5cf6" },
-                    { label: "Handoff Pending", value: chatLogs.filter(l => l.handoff?.status === "pending").length, icon: "🔔", color: "#f59e0b" },
+                    { label: "Live Handoffs", value: chatLogs.filter(l => l.handoff?.status === "live").length, icon: "🔔", color: "#f59e0b" },
                 ].map((s) => (
                     <div key={s.label} style={{
                         padding: "1.25rem",
@@ -151,8 +151,8 @@ export default async function AILogsPage() {
                                                         fontSize: "0.6875rem",
                                                         padding: "2px 6px",
                                                         borderRadius: "4px",
-                                                        background: log.handoff.status === "answered" ? "rgba(34,197,94,0.15)" : log.handoff.status === "pending" ? "rgba(245,158,11,0.15)" : "rgba(107,114,128,0.15)",
-                                                        color: log.handoff.status === "answered" ? "#22c55e" : log.handoff.status === "pending" ? "#f59e0b" : "#6b7280",
+                                                        background: log.handoff.status === "answered" ? "rgba(34,197,94,0.15)" : log.handoff.status === "live" ? "rgba(245,158,11,0.15)" : "rgba(107,114,128,0.15)",
+                                                        color: log.handoff.status === "answered" ? "#22c55e" : log.handoff.status === "live" ? "#f59e0b" : "#6b7280",
                                                         fontWeight: 600,
                                                     }}>
                                                         handoff: {log.handoff.status}

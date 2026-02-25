@@ -146,6 +146,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
     const currentInput = prompt;
     const currentHistory = history;
+    const isLive = isWaitingForHuman;
 
     // Reset animation state
     streamBufferRef.current = "";
@@ -156,6 +157,19 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
     setDisplayMessages(prev => [...prev, { text: currentInput, sender: "user" }]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+    if (isLive) {
+      // Live mode: just relay to Telegram, don't show loading spinner
+      try {
+        await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: currentInput, history: currentHistory, sessionId }),
+        });
+      } catch { /* silently fail, message is already shown in UI */ }
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -223,6 +237,8 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             }
           } else if (parsed.type === "handoff_initiated") {
             setIsWaitingForHuman(true);
+          } else if (parsed.type === "live_relayed") {
+            // Message was relayed to Telegram in live mode, nothing to show
           } else if (parsed.type === "done") {
             isApiDoneRef.current = true;
           } else if (parsed.type === "error" && !messageAdded) {
@@ -234,7 +250,10 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
       if (!messageAdded) {
         setIsLoading(false);
-        setDisplayMessages(prev => [...prev, { text: "No response received.", sender: "ai" }]);
+        // In live mode after handoff_initiated, no AI message is expected for initial trigger
+        if (!isWaitingForHuman) {
+          setDisplayMessages(prev => [...prev, { text: "No response received.", sender: "ai" }]);
+        }
       }
     } catch {
       setIsLoading(false);
@@ -242,7 +261,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
       setDisplayMessages(prev => [...prev, { text: "Sorry, an error occurred. Please try again.", sender: "ai" }]);
     }
-  }, [input, isLoading, isStreaming, sessionId, history]);
+  }, [input, isLoading, isStreaming, sessionId, history, isWaitingForHuman]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -319,7 +338,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             <textarea
               ref={textareaRef}
               className={styles.textarea}
-              placeholder="Message Efe's AI..."
+              placeholder={isWaitingForHuman ? "Efe ile konuşuyorsunuz..." : "Message Efe's AI..."}
               value={input}
               rows={1}
               onChange={(e) => { setInput(e.target.value); autoResize(); }}
