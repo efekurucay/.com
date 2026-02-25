@@ -176,8 +176,32 @@ async function detectUnknownQuestion(
     // Provide a short context summary (names, role, topics) — not full content
     const contextSummary = portfolioContext.slice(0, 600);
 
-    const judgePrompt = `You are a scope-detection agent for a personal portfolio chatbot.
-The chatbot can ONLY answer questions about: Yahya Efe Kuruçay's career, projects, skills, education, contact info, and general professional background.
+    const judgePrompt = `You are a strict scope-detection agent for Yahya Efe Kuruçay's personal portfolio chatbot.
+
+## ALLOWED (unknown: false)
+- Questions about Yahya Efe: career, projects, skills, education, experience, contact info, professional background
+- Greetings, small talk, pleasantries ("merhaba", "naber", "nasılsın", "hello", "hey")
+- Self-introductions ("ben Ali", "my name is...", "benim adım...")
+- Follow-up or conversational messages ("tamam", "teşekkürler", "ok", "evet", "hayır", "anladım")
+- Requests to contact Efe, send a message, or work together
+- Questions about the chatbot itself ("sen kimsin", "ne yaparsın")
+- Compliments, feedback about the portfolio or site
+- Generic tech questions that Efe could reasonably answer given his expertise
+- Short, ambiguous messages that could be part of a normal conversation flow
+
+## NOT ALLOWED (unknown: true) — Only flag these with HIGH confidence
+- Legal, medical, or financial advice requests
+- Questions about other people's personal lives
+- Completely unrelated topics (cooking recipes, weather forecasts, sports scores, homework help)
+- Harmful, offensive, or inappropriate content
+- Requests to generate code, write essays, or act as a general-purpose AI assistant
+
+## CRITICAL RULES
+1. When in doubt, return unknown: false. False negatives are much better than false positives.
+2. Short or ambiguous messages should ALMOST ALWAYS be unknown: false with confidence: 0.
+3. Greetings and self-introductions are NEVER out of scope.
+4. Confidence must reflect true certainty. Only use 75+ for clearly, obviously unrelated topics.
+5. A message being "not a question" does NOT make it out of scope.
 
 Context summary:
 ${contextSummary}
@@ -185,9 +209,7 @@ ${contextSummary}
 User message: "${prompt}"
 
 Respond with ONLY valid JSON, no markdown fences:
-{"unknown": <true if out of scope>, "reason": "<brief explanation>", "confidence": <0-100>}
-
-Out-of-scope examples: legal questions, financial advice, medical questions, personal life of others, salary negotiation, unrelated tech support.`;
+{"unknown": <true/false>, "reason": "<brief explanation>", "confidence": <0-100>}`;
 
     const result = await model.generateContent(judgePrompt);
     const raw = result.response.text().trim();
@@ -198,6 +220,66 @@ Out-of-scope examples: legal questions, financial advice, medical questions, per
     // Never block the main flow
     console.warn("[UnknownDetection] Failed:", e);
     return { unknown: false, reason: "detection_error", confidence: 0 };
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── Business Intent Detection ─────────────────────────────────────────────────
+interface IntentResult {
+  business: boolean;  // true if user seems like a potential client/employer/collaborator
+  reason: string;
+  confidence: number; // 0-100
+}
+
+async function detectBusinessIntent(
+  apiKey: string,
+  history: HistoryMessage[]
+): Promise<IntentResult> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
+    const recentMessages = history
+      .slice(-8)
+      .map((m) => `${m.role === "user" ? "User" : "Bot"}: ${m.parts[0]?.text?.slice(0, 250)}`)
+      .join("\n");
+
+    if (!recentMessages.trim()) return { business: false, reason: "no_history", confidence: 0 };
+
+    const intentPrompt = `Analyze this conversation with a portfolio chatbot. Is this user a potential business contact worth connecting with the real person?
+
+## HIGH INTENT (business: true, confidence 70+)
+- Employer or recruiter asking about availability, hiring, job fit
+- Client wanting to discuss a project, collaboration, or freelance work
+- Investor or partner exploring business opportunities
+- Someone explicitly asking to talk to / meet / contact Efe directly
+- Professional networking with clear intent
+
+## LOW INTENT (business: false)
+- Casual browsing, just curious about the portfolio
+- Asking general questions about skills/projects with no business intent
+- Small talk, greetings, testing the chatbot
+- Students asking for homework help
+- Random or off-topic conversations
+
+## RULES
+- At least 2-3 meaningful user messages needed before high confidence
+- Single greetings or short messages = always low intent
+- "I want to reach Efe" or "let's work together" = immediate high intent
+- When in doubt, return business: false
+
+Conversation:
+${recentMessages}
+
+Respond with ONLY valid JSON, no markdown fences:
+{"business": <true/false>, "reason": "<brief explanation>", "confidence": <0-100>}`;
+
+    const result = await model.generateContent(intentPrompt);
+    const raw = result.response.text().trim();
+    const cleaned = raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    return JSON.parse(cleaned) as IntentResult;
+  } catch {
+    return { business: false, reason: "detection_error", confidence: 0 };
   }
 }
 // ──────────────────────────────────────────────────────────────────────────────
@@ -385,64 +467,8 @@ export async function POST(req: NextRequest) {
             { merge: true }
           ).catch(() => { });
 
-          // ── Human Handoff: Telegram notification & go live ──────────
-          if (unknownInfo.confidence >= 75) {
-            if (!existingHandoff || existingHandoff.status !== "live") {
-              // Try to find user's real name from history
-              let displayName: string | null = userName || null;
-              if (!displayName) {
-                displayName = await extractUserName(apiKey, history as HistoryMessage[]);
-              }
-              const codeName = getSessionName(sessionId);
-              const name = displayName ? `${displayName} (${codeName})` : codeName;
-
-              const recentContext = (history as HistoryMessage[])
-                .slice(-6)
-                .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
-                .join("\n");
-
-              const telegramText = [
-                `🔔 ${name} canli sohbet basladi!\n`,
-                `Soru: "${prompt}"\n`,
-                recentContext ? `Son mesajlar:\n${recentContext}\n` : "",
-                `Yanitla -> kullaniciya iletilecek.`,
-              ].filter(Boolean).join("\n");
-
-              const telegramMessageId = await sendTelegramMessage(telegramText);
-
-              const now = new Date().toISOString();
-              await getAdminDb().collection("chats").doc(sessionId).set(
-                {
-                  handoff: {
-                    status: "live",
-                    question: prompt,
-                    context: recentContext,
-                    telegramMessageId,
-                    displayName: displayName || codeName,
-                    requestedAt: now,
-                    answeredAt: null,
-                    humanReply: null,
-                  },
-                },
-                { merge: true }
-              );
-
-              if (telegramMessageId) {
-                await getAdminDb().collection("handoffSessions").add({
-                  sessionId,
-                  telegramMessageId,
-                  status: "live",
-                  requestedAt: now,
-                });
-              }
-
-              send({ type: "handoff_initiated", sessionId });
-              send({ type: "done" });
-              controller.close();
-              return;
-            }
-          }
-          // ───────────────────────────────────────────────────────────────
+          // Auto-handoff removed — AI handles out-of-scope questions itself.
+          // Live chat is only triggered manually (sidebar button or inline prompt).
         }
         // ────────────────────────────────────────────────────────────────────
 
@@ -529,6 +555,17 @@ export async function POST(req: NextRequest) {
               send({ type: "chunk", text: chunk });
               fullText += chunk;
             }
+          }
+        }
+        // ────────────────────────────────────────────────────────────────────
+
+        // ── [3] Business Intent Detection — suggest live chat for valuable leads
+        const fullHistory = [...(history as HistoryMessage[]), { role: "user" as const, parts: [{ text: prompt }] }];
+        const userMsgCount = fullHistory.filter((m) => m.role === "user").length;
+        if (userMsgCount >= 3 && !existingHandoff) {
+          const intent = await detectBusinessIntent(apiKey, fullHistory);
+          if (intent.business && intent.confidence >= 60) {
+            send({ type: "suggest_live_chat", reason: intent.reason, confidence: intent.confidence });
           }
         }
         // ────────────────────────────────────────────────────────────────────

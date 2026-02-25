@@ -275,6 +275,8 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                 }
               }, 12);
             }
+          } else if (parsed.type === "suggest_live_chat") {
+            setLiveChatSuggested(true);
           } else if (parsed.type === "handoff_initiated") {
             handoffInitiatedRef.current = true; // sync flag — checked before state updates
             setIsLoading(false);
@@ -313,10 +315,9 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
     }
   };
 
-  // Count user messages to show live chat prompt after 3
-  const userMessageCount = displayMessages.filter((m) => m.sender === "user").length;
   const [liveChatDismissed, setLiveChatDismissed] = useState(false);
-  const showLiveChatPrompt = userMessageCount >= 3 && !isLiveHandoff && !liveChatDismissed && !isLoading && !isStreaming;
+  const [liveChatSuggested, setLiveChatSuggested] = useState(false);
+  const showLiveChatPrompt = liveChatSuggested && !isLiveHandoff && !liveChatDismissed && !isLoading && !isStreaming;
 
   const handleStartLiveChat = useCallback(async (providedName?: string) => {
     if (isLiveHandoff || !sessionId) return;
