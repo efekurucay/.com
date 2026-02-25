@@ -107,6 +107,94 @@ async function saveContactMessage(name: string, email: string, message: string) 
   }
 }
 
+// ── Unknown Question Detection Tool ───────────────────────────────────────────
+interface UnknownDetectionResult {
+  unknown: boolean;
+  reason: string;
+  confidence: number; // 0-100
+}
+
+async function detectUnknownQuestion(
+  apiKey: string,
+  prompt: string,
+  portfolioContext: string
+): Promise<UnknownDetectionResult> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+    // Provide a short context summary (names, role, topics) — not full content
+    const contextSummary = portfolioContext.slice(0, 600);
+
+    const judgePrompt = `You are a scope-detection agent for a personal portfolio chatbot.
+The chatbot can ONLY answer questions about: Yahya Efe Kuruçay's career, projects, skills, education, contact info, and general professional background.
+
+Context summary:
+${contextSummary}
+
+User message: "${prompt}"
+
+Respond with ONLY valid JSON, no markdown fences:
+{"unknown": <true if out of scope>, "reason": "<brief explanation>", "confidence": <0-100>}
+
+Out-of-scope examples: legal questions, financial advice, medical questions, personal life of others, salary negotiation, unrelated tech support.`;
+
+    const result = await model.generateContent(judgePrompt);
+    const raw = result.response.text().trim();
+    // Strip possible markdown fences
+    const cleaned = raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    return JSON.parse(cleaned) as UnknownDetectionResult;
+  } catch (e) {
+    // Never block the main flow
+    console.warn("[UnknownDetection] Failed:", e);
+    return { unknown: false, reason: "detection_error", confidence: 0 };
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── Response Evaluator (Self-Critic Agent) ────────────────────────────────────
+const EVAL_THRESHOLD = 7; // scores below this trigger a revision
+
+interface EvalResult {
+  score: number;    // 1-10
+  feedback: string;
+  revised?: string; // only present when score < threshold
+}
+
+async function evaluateResponse(
+  apiKey: string,
+  userPrompt: string,
+  aiResponse: string
+): Promise<EvalResult> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+    const evalPrompt = `You are a strict evaluator for a portfolio chatbot assistant.
+Score the following AI response on a scale of 1-10 based on:
+- Professional tone (1-3 pts)
+- Clarity and completeness (1-3 pts)
+- Safety / no hallucinations (1-2 pts)
+- Relevance to the user question (1-2 pts)
+
+User question: "${userPrompt}"
+AI response: "${aiResponse}"
+
+If score < ${EVAL_THRESHOLD}, also provide a concise revised version.
+Respond with ONLY valid JSON, no markdown fences:
+{"score": <1-10>, "feedback": "<brief>", "revised": "<only if score < ${EVAL_THRESHOLD}>"}`;
+
+    const result = await model.generateContent(evalPrompt);
+    const raw = result.response.text().trim();
+    const cleaned = raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    return JSON.parse(cleaned) as EvalResult;
+  } catch (e) {
+    console.warn("[Evaluator] Failed:", e);
+    return { score: 10, feedback: "evaluation_error" };
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
   if (!checkRateLimit(ip)) {
@@ -129,6 +217,27 @@ export async function POST(req: NextRequest) {
 
       try {
         const portfolioContext = await getPortfolioContext();
+
+        // ── [1] Unknown Question Detection ──────────────────────────────────
+        const unknownInfo = await detectUnknownQuestion(apiKey, prompt, portfolioContext);
+        if (unknownInfo.unknown) {
+          console.warn(`[UnknownDetection] Out-of-scope question (confidence ${unknownInfo.confidence}%): ${unknownInfo.reason}`);
+          send({ type: "unknown_question", reason: unknownInfo.reason, confidence: unknownInfo.confidence });
+          // Log to Firestore asynchronously (non-blocking)
+          getAdminDb().collection("chats").doc(sessionId).set(
+            {
+              unknownEvents: FieldValue.arrayUnion({
+                prompt,
+                reason: unknownInfo.reason,
+                confidence: unknownInfo.confidence,
+                at: new Date().toISOString(),
+              }),
+            },
+            { merge: true }
+          ).catch(() => { });
+        }
+        // ────────────────────────────────────────────────────────────────────
+
         const systemInstruction = `Sen, Yahya Efe Kuruçay'ın kişisel portfolyo sitesindeki bir yapay zeka asistanısın.
     KURALLAR:
     1. **Dil:** Tüm yanıtların sana verilen bağlamın diline uygun olmalıdır. Sorulan sorunun diline uygun cevap ver.
@@ -194,6 +303,28 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // ── [2] Response Evaluator (Self-Critic) ─────────────────────────────
+        let evalScore = 10;
+        if (fullText) {
+          const evalResult = await evaluateResponse(apiKey, prompt, fullText);
+          evalScore = evalResult.score;
+          console.log(`[Evaluator] score=${evalResult.score} | ${evalResult.feedback}`);
+
+          if (evalResult.score < EVAL_THRESHOLD && evalResult.revised) {
+            console.log("[Evaluator] Score below threshold — appending revised response.");
+            // Append a separator and the revised response as additional chunks
+            const revisedChunks = [
+              "\n\n---\n*Aşağıdaki yanıt, kalite güvencesi için otomatik olarak iyileştirilmiştir:*\n\n",
+              evalResult.revised,
+            ];
+            for (const chunk of revisedChunks) {
+              send({ type: "chunk", text: chunk });
+              fullText += chunk;
+            }
+          }
+        }
+        // ────────────────────────────────────────────────────────────────────
+
         // ── Persist conversation to Firestore ────────────────────────────────
         const messagesToSave = [
           ...history,
@@ -201,7 +332,11 @@ export async function POST(req: NextRequest) {
           { role: "model", parts: [{ text: fullText }] },
         ];
         await getAdminDb().collection("chats").doc(sessionId).set(
-          { messages: JSON.parse(JSON.stringify(messagesToSave)), updatedAt: FieldValue.serverTimestamp() },
+          {
+            messages: JSON.parse(JSON.stringify(messagesToSave)),
+            updatedAt: FieldValue.serverTimestamp(),
+            lastEvalScore: evalScore,
+          },
           { merge: true }
         );
 
