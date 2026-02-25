@@ -76,6 +76,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [isStreaming, setIsStreaming] = useState(false); // typing animation running
   const [isWaitingForHuman, setIsWaitingForHuman] = useState(false); // controls spinner
   const [isLiveHandoff, setIsLiveHandoff] = useState(false);          // stays true all session
+  const [isHumanTyping, setIsHumanTyping] = useState(false);          // brief typing indicator for Efe
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryHandledRef = useRef(false);
@@ -115,6 +116,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   // Firestore listener for live handoff — watches messages array for new human replies
   // Uses isLiveHandoff (not isWaitingForHuman) so it stays alive after Efe's first reply
   const seenMessageCountRef = useRef<number>(0);
+  const hasShownJoinRef = useRef(false);
   useEffect(() => {
     if (!isLiveHandoff || !sessionId) return;
 
@@ -135,15 +137,33 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
         // Hide the waiting spinner on first reply
         setIsWaitingForHuman(false);
 
-        newHumanMsgs.forEach((m) => {
-          const text = m.parts?.[0]?.text ?? "";
-          if (!text) return;
-          setDisplayMessages((prev) => [...prev, { text, sender: "human" }]);
-          setHistory((prev) => [
-            ...prev,
-            { role: "model", parts: [{ text }] },
-          ]);
-        });
+        // Show typing indicator briefly, then reveal message(s)
+        setIsHumanTyping(true);
+
+        const texts = newHumanMsgs
+          .map((m) => m.parts?.[0]?.text ?? "")
+          .filter(Boolean);
+
+        setTimeout(() => {
+          setIsHumanTyping(false);
+
+          // On first Efe message, show join announcement
+          if (!hasShownJoinRef.current) {
+            hasShownJoinRef.current = true;
+            setDisplayMessages((prev) => [
+              ...prev,
+              { text: "__handoff_join__", sender: "human" },
+            ]);
+          }
+
+          texts.forEach((text) => {
+            setDisplayMessages((prev) => [...prev, { text, sender: "human" }]);
+            setHistory((prev) => [
+              ...prev,
+              { role: "model", parts: [{ text }] },
+            ]);
+          });
+        }, 800); // brief typing delay
       }
     });
 
@@ -254,13 +274,9 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             }
           } else if (parsed.type === "handoff_initiated") {
             handoffInitiatedRef.current = true; // sync flag — checked before state updates
+            setIsLoading(false);
             setIsWaitingForHuman(true);
             setIsLiveHandoff(true);  // keep listener alive for whole session
-            // Add a system announcement that Efe has joined
-            setDisplayMessages((prev) => [
-              ...prev,
-              { text: "__handoff_join__", sender: "human" },
-            ]);
           } else if (parsed.type === "live_relayed") {
             // Message was relayed to Telegram in live mode, nothing to show
           } else if (parsed.type === "done") {
@@ -285,7 +301,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
       if (typingIntervalRef.current) { clearInterval(typingIntervalRef.current); typingIntervalRef.current = null; }
       setDisplayMessages(prev => [...prev, { text: "Sorry, an error occurred. Please try again.", sender: "ai" }]);
     }
-  }, [input, isLoading, isStreaming, sessionId, history, isWaitingForHuman, isLiveHandoff]);
+  }, [input, isLoading, isStreaming, sessionId, history, isLiveHandoff]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -355,6 +371,14 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   </div>
                 </div>
               )}
+              {isHumanTyping && (
+                <div className={styles.messageRow}>
+                  <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
+                  <div className={`${styles.bubble} ${styles.bubbleHuman}`}>
+                    <TypingIndicator />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </>
           )}
@@ -368,7 +392,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             <textarea
               ref={textareaRef}
               className={styles.textarea}
-              placeholder={isWaitingForHuman ? "Efe ile konuşuyorsunuz..." : "Message Efe's AI..."}
+              placeholder={isLiveHandoff ? "Efe ile konuşuyorsunuz..." : "Message Efe's AI..."}
               value={input}
               rows={1}
               onChange={(e) => { setInput(e.target.value); autoResize(); }}
