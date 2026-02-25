@@ -227,6 +227,13 @@
   border-radius: var(--radius-l) var(--radius-l) var(--radius-xs) var(--radius-l);
 }
 
+.bubbleHuman {
+  background: transparent;
+  color: var(--neutral-on-background-strong);
+  padding-left: 0.75rem;
+  border-left: 2px solid #22c55e;
+}
+
 .inputArea {
   padding: 1rem 0 0.5rem;
   flex-shrink: 0;

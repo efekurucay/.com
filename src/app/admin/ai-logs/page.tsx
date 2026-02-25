@@ -100,6 +100,7 @@ export default async function AILogsPage() {
                     { label: "Avg Eval Score", value: avgScore != null ? `${avgScore}/10` : "—", icon: "⭐", color: "#f59e0b" },
                     { label: "Low-Score Responses", value: belowThresholdCount, icon: "⚠️", color: "#ef4444" },
                     { label: "Unknown Questions", value: unknownEvents.length, icon: "🔍", color: "#8b5cf6" },
+                    { label: "Handoff Pending", value: chatLogs.filter(l => l.handoff?.status === "pending").length, icon: "🔔", color: "#f59e0b" },
                 ].map((s) => (
                     <div key={s.label} style={{
                         padding: "1.25rem",
@@ -143,6 +144,18 @@ export default async function AILogsPage() {
                                                 {(log.unknownEvents?.length ?? 0) > 0 && (
                                                     <span style={{ fontSize: "0.6875rem", padding: "2px 6px", borderRadius: "4px", background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontWeight: 600 }}>
                                                         {log.unknownEvents!.length} unknown
+                                                    </span>
+                                                )}
+                                                {log.handoff && (
+                                                    <span style={{
+                                                        fontSize: "0.6875rem",
+                                                        padding: "2px 6px",
+                                                        borderRadius: "4px",
+                                                        background: log.handoff.status === "answered" ? "rgba(34,197,94,0.15)" : log.handoff.status === "pending" ? "rgba(245,158,11,0.15)" : "rgba(107,114,128,0.15)",
+                                                        color: log.handoff.status === "answered" ? "#22c55e" : log.handoff.status === "pending" ? "#f59e0b" : "#6b7280",
+                                                        fontWeight: 600,
+                                                    }}>
+                                                        handoff: {log.handoff.status}
                                                     </span>
                                                 )}
                                                 <span style={{ fontSize: "0.6875rem", color: weak }}>{log.messageCount} msgs</span>

@@ -328,12 +328,23 @@ export interface UnknownEvent {
     at: string;
 }
 
+export interface HandoffData {
+    status: "pending" | "answered" | "expired";
+    question: string;
+    context: string;
+    telegramMessageId: number | null;
+    requestedAt: string;
+    answeredAt: string | null;
+    humanReply: string | null;
+}
+
 export interface ChatLog {
     id: string;
     updatedAt: any;
     lastEvalScore?: number;
     unknownEvents?: UnknownEvent[];
     messageCount: number;
+    handoff?: HandoffData | null;
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -353,6 +364,7 @@ export async function getAIChatLogs(limit = 50): Promise<ChatLog[]> {
             lastEvalScore: data.lastEvalScore ?? null,
             unknownEvents: data.unknownEvents ?? [],
             messageCount: Array.isArray(data.messages) ? data.messages.length : 0,
+            handoff: data.handoff ?? null,
         } as ChatLog;
     });
 }

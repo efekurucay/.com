@@ -5,6 +5,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getPortfolioContext } from "@/lib/context";
 import { Resend } from 'resend';
 import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
+import { sendTelegramMessage } from "@/lib/telegram";
 
 // ── Simple in-memory rate limiter ──────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -121,7 +122,7 @@ async function detectUnknownQuestion(
 ): Promise<UnknownDetectionResult> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     // Provide a short context summary (names, role, topics) — not full content
     const contextSummary = portfolioContext.slice(0, 600);
@@ -168,7 +169,7 @@ async function evaluateResponse(
 ): Promise<EvalResult> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const evalPrompt = `You are a strict evaluator for a portfolio chatbot assistant.
 Score the following AI response on a scale of 1-10 based on:
@@ -216,6 +217,31 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
 
       try {
+        // ── [0] Check if session is in live handoff mode ──────────────────
+        const sessionDoc = await getAdminDb().collection("chats").doc(sessionId).get();
+        const existingHandoff = sessionDoc.data()?.handoff;
+
+        if (existingHandoff?.status === "live") {
+          // Live mode: relay user message to Telegram, skip AI entirely
+          const telegramText = `👤 Kullanıcı: ${prompt}`;
+          await sendTelegramMessage(telegramText, existingHandoff.telegramMessageId ?? undefined);
+
+          // Save user message to Firestore
+          await getAdminDb().collection("chats").doc(sessionId).set(
+            {
+              messages: FieldValue.arrayUnion({ role: "user", parts: [{ text: prompt }] }),
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          send({ type: "live_relayed" });
+          send({ type: "done" });
+          controller.close();
+          return;
+        }
+        // ──────────────────────────────────────────────────────────────────
+
         const portfolioContext = await getPortfolioContext();
 
         // ── [1] Unknown Question Detection ──────────────────────────────────
@@ -235,6 +261,53 @@ export async function POST(req: NextRequest) {
             },
             { merge: true }
           ).catch(() => { });
+
+          // ── Human Handoff: Telegram notification & go live ──────────
+          if (unknownInfo.confidence >= 75) {
+            if (!existingHandoff || existingHandoff.status !== "live") {
+              const recentContext = (history as HistoryMessage[])
+                .slice(-6)
+                .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
+                .join("\n");
+
+              const telegramText = [
+                `🔔 Canli sohbet basladi!\n`,
+                `Soru: "${prompt}"\n`,
+                recentContext ? `Son mesajlar:\n${recentContext}\n` : "",
+                `Yanitla -> kullaniciya iletilecek.`,
+              ].filter(Boolean).join("\n");
+
+              const telegramMessageId = await sendTelegramMessage(telegramText);
+
+              const now = new Date().toISOString();
+              await getAdminDb().collection("chats").doc(sessionId).set(
+                {
+                  handoff: {
+                    status: "live",
+                    question: prompt,
+                    context: recentContext,
+                    telegramMessageId,
+                    requestedAt: now,
+                    answeredAt: null,
+                    humanReply: null,
+                  },
+                },
+                { merge: true }
+              );
+
+              if (telegramMessageId) {
+                await getAdminDb().collection("handoffSessions").add({
+                  sessionId,
+                  telegramMessageId,
+                  status: "live",
+                  requestedAt: now,
+                });
+              }
+
+              send({ type: "handoff_initiated", sessionId });
+            }
+          }
+          // ───────────────────────────────────────────────────────────────
         }
         // ────────────────────────────────────────────────────────────────────
 
@@ -251,7 +324,7 @@ export async function POST(req: NextRequest) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash-lite",
+          model: "gemini-3-flash-preview",
           systemInstruction,
           tools,
           safetySettings: [

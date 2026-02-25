@@ -5,11 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import { Avatar, Spinner, Flex, Text, Heading } from "@/once-ui/components";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
+import { HandoffWaiting } from "@/components/chat/HandoffWaiting";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import styles from './chat.module.scss';
 
 type DisplayMessage = {
   text: string;
-  sender: "user" | "ai";
+  sender: "user" | "ai" | "human";
 };
 
 type HistoryMessage = {
@@ -71,6 +74,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);   // waiting for first chunk
   const [isStreaming, setIsStreaming] = useState(false); // typing animation running
+  const [isWaitingForHuman, setIsWaitingForHuman] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const queryHandledRef = useRef(false);
@@ -105,6 +109,29 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
   useEffect(() => {
     if (!isLoading && !isStreaming && textareaRef.current) textareaRef.current.focus();
   }, [isLoading, isStreaming]);
+
+  // Firestore listener for live handoff — Efe's messages arrive here
+  const lastReplyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isWaitingForHuman || !sessionId) return;
+    const unsubscribe = onSnapshot(doc(db, "chats", sessionId), (snap) => {
+      const data = snap.data();
+      if (!data?.handoff) return;
+      const reply = data.handoff.lastReply;
+      if (reply && reply !== lastReplyRef.current) {
+        lastReplyRef.current = reply;
+        setDisplayMessages(prev => [...prev, {
+          text: reply,
+          sender: "human",
+        }]);
+        setHistory(prev => [
+          ...prev,
+          { role: "model", parts: [{ text: reply }] },
+        ]);
+      }
+    });
+    return () => unsubscribe();
+  }, [isWaitingForHuman, sessionId]);
 
   const autoResize = () => {
     const ta = textareaRef.current;
@@ -194,6 +221,8 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                 }
               }, 12);
             }
+          } else if (parsed.type === "handoff_initiated") {
+            setIsWaitingForHuman(true);
           } else if (parsed.type === "done") {
             isApiDoneRef.current = true;
           } else if (parsed.type === "error" && !messageAdded) {
@@ -254,9 +283,9 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   className={`${styles.messageRow} ${msg.sender === "user" ? styles.messageRowUser : ""}`}
                 >
                   <div className={styles.avatarSmall}>
-                    <Avatar size="s" src={msg.sender === "ai" ? avatarUrl : undefined} />
+                    <Avatar size="s" src={msg.sender !== "user" ? avatarUrl : undefined} />
                   </div>
-                  <div className={`${styles.bubble} ${msg.sender === "ai" ? styles.bubbleAi : styles.bubbleUser}`}>
+                  <div className={`${styles.bubble} ${msg.sender === "user" ? styles.bubbleUser : msg.sender === "human" ? styles.bubbleHuman : styles.bubbleAi}`}>
                     <ChatMessageContent content={msg.text} />
                   </div>
                 </div>
@@ -266,6 +295,14 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
                   <div className={`${styles.bubble} ${styles.bubbleAi}`}>
                     <TypingIndicator />
+                  </div>
+                </div>
+              )}
+              {isWaitingForHuman && (
+                <div className={styles.messageRow}>
+                  <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
+                  <div className={`${styles.bubble} ${styles.bubbleAi}`}>
+                    <HandoffWaiting />
                   </div>
                 </div>
               )}
