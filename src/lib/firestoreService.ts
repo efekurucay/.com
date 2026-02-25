@@ -319,3 +319,63 @@ export async function getDashboardStats(): Promise<{
         unreadCount: unreadContacts.data().count,
     };
 }
+
+// ── AI Chat Log types ──────────────────────────────────────────────────────────
+export interface UnknownEvent {
+    prompt: string;
+    reason: string;
+    confidence: number;
+    at: string;
+}
+
+export interface ChatLog {
+    id: string;
+    updatedAt: any;
+    lastEvalScore?: number;
+    unknownEvents?: UnknownEvent[];
+    messageCount: number;
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Get recent AI chat sessions (admin use) */
+export async function getAIChatLogs(limit = 50): Promise<ChatLog[]> {
+    const snap = await db()
+        .collection("chats")
+        .orderBy("updatedAt", "desc")
+        .limit(limit)
+        .get();
+
+    return snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            updatedAt: data.updatedAt,
+            lastEvalScore: data.lastEvalScore ?? null,
+            unknownEvents: data.unknownEvents ?? [],
+            messageCount: Array.isArray(data.messages) ? data.messages.length : 0,
+        } as ChatLog;
+    });
+}
+
+/** Get all unknown/out-of-scope events across all sessions */
+export async function getAllUnknownEvents(): Promise<(UnknownEvent & { sessionId: string })[]> {
+    const snap = await db()
+        .collection("chats")
+        .where("unknownEvents", "!=", null)
+        .orderBy("updatedAt", "desc")
+        .limit(100)
+        .get();
+
+    const events: (UnknownEvent & { sessionId: string })[] = [];
+    for (const doc of snap.docs) {
+        const data = doc.data();
+        if (Array.isArray(data.unknownEvents)) {
+            for (const ev of data.unknownEvents) {
+                events.push({ ...ev, sessionId: doc.id });
+            }
+        }
+    }
+    // Sort by timestamp desc
+    events.sort((a, b) => (a.at > b.at ? -1 : 1));
+    return events;
+}

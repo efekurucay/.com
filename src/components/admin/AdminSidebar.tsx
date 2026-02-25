@@ -19,6 +19,7 @@ const menuItems = [
     { label: "Blog Posts", icon: "edit", href: "/admin/posts" },
     { label: "Projects", icon: "openLink", href: "/admin/projects" },
     { label: "Messages", icon: "email", href: "/admin/contacts" },
+    { label: "AI Logs", icon: "chartBar", href: "/admin/ai-logs" },
     { label: "Site Config", icon: "settings", href: "/admin/site-config" },
 ];
 
