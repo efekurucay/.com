@@ -305,6 +305,9 @@ export async function POST(req: NextRequest) {
               }
 
               send({ type: "handoff_initiated", sessionId });
+              send({ type: "done" });
+              controller.close();
+              return;
             }
           }
           // ───────────────────────────────────────────────────────────────
