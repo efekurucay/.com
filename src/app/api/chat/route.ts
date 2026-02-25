@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
   }
 
-  const { prompt, history, sessionId } = await req.json();
+  const { prompt, history, sessionId, forceHandoff } = await req.json();
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || !sessionId || !prompt) {
@@ -236,6 +236,53 @@ export async function POST(req: NextRequest) {
           );
 
           send({ type: "live_relayed" });
+          send({ type: "done" });
+          controller.close();
+          return;
+        }
+        // ──────────────────────────────────────────────────────────────────
+
+        // ── [0.5] Manual live chat request ──────────────────────────────
+        if (forceHandoff) {
+          const recentContext = (history as HistoryMessage[])
+            .slice(-6)
+            .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
+            .join("\n");
+
+          const telegramText = [
+            `🔔 Kullanici canli sohbet istedi!\n`,
+            recentContext ? `Son mesajlar:\n${recentContext}\n` : "",
+            `Yanitla -> kullaniciya iletilecek.`,
+          ].filter(Boolean).join("\n");
+
+          const telegramMessageId = await sendTelegramMessage(telegramText);
+
+          const now = new Date().toISOString();
+          await getAdminDb().collection("chats").doc(sessionId).set(
+            {
+              handoff: {
+                status: "live",
+                question: prompt,
+                context: recentContext,
+                telegramMessageId,
+                requestedAt: now,
+                answeredAt: null,
+                humanReply: null,
+              },
+            },
+            { merge: true }
+          );
+
+          if (telegramMessageId) {
+            await getAdminDb().collection("handoffSessions").add({
+              sessionId,
+              telegramMessageId,
+              status: "live",
+              requestedAt: now,
+            });
+          }
+
+          send({ type: "handoff_initiated", sessionId });
           send({ type: "done" });
           controller.close();
           return;

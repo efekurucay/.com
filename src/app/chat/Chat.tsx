@@ -310,6 +310,53 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
     }
   };
 
+  // Count user messages to show live chat prompt after 3
+  const userMessageCount = displayMessages.filter((m) => m.sender === "user").length;
+  const [liveChatDismissed, setLiveChatDismissed] = useState(false);
+  const showLiveChatPrompt = userMessageCount >= 3 && !isLiveHandoff && !liveChatDismissed && !isLoading && !isStreaming;
+
+  const handleStartLiveChat = useCallback(async () => {
+    if (isLiveHandoff || !sessionId) return;
+    handoffInitiatedRef.current = true;
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "Canlı sohbet isteği", history, sessionId, forceHandoff: true }),
+      });
+
+      if (!response.ok || !response.body) throw new Error("Bad response");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n\n");
+        sseBuffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          let parsed: { type: string };
+          try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (parsed.type === "handoff_initiated") {
+            setIsLoading(false);
+            setIsWaitingForHuman(true);
+            setIsLiveHandoff(true);
+          }
+        }
+      }
+    } catch {
+      setIsLoading(false);
+    }
+  }, [sessionId, history, isLiveHandoff]);
+
   const isEmpty = displayMessages.length === 0 && !isLoading;
   const isDisabled = isLoading || isStreaming;
 
@@ -360,6 +407,20 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   <div className={styles.avatarSmall}><Avatar size="s" src={avatarUrl} /></div>
                   <div className={`${styles.bubble} ${styles.bubbleAi}`}>
                     <TypingIndicator />
+                  </div>
+                </div>
+              )}
+              {showLiveChatPrompt && (
+                <div className={styles.liveChatPrompt}>
+                  <span>Efe ile canlı sohbete geçmek ister misiniz?</span>
+                  <div className={styles.liveChatPromptActions}>
+                    <button className={styles.liveChatPromptYes} onClick={handleStartLiveChat}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                      Evet, bağlan
+                    </button>
+                    <button className={styles.liveChatPromptNo} onClick={() => setLiveChatDismissed(true)}>
+                      Hayır
+                    </button>
                   </div>
                 </div>
               )}
@@ -435,6 +496,17 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
 
       {/* Desktop contact sidebar */}
       <aside className={styles.contactPanel}>
+        <button
+          className={styles.liveChatBtn}
+          onClick={handleStartLiveChat}
+          disabled={isLiveHandoff || isDisabled}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.5 3.44 1.36 4.86L2.1 21.3a.75.75 0 0 0 .9.9l4.44-1.26A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
+          </svg>
+          {isLiveHandoff ? "Canlı sohbet aktif" : "Live Chat with Efe"}
+        </button>
+        <div className={styles.contactPanelDivider} />
         <p className={styles.contactPanelTitle}>Quick contact</p>
         {contactActions.map((action, i) => (
           <React.Fragment key={action.label}>
