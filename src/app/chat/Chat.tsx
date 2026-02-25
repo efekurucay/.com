@@ -110,26 +110,40 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
     if (!isLoading && !isStreaming && textareaRef.current) textareaRef.current.focus();
   }, [isLoading, isStreaming]);
 
-  // Firestore listener for live handoff — Efe's messages arrive here
-  const lastReplyRef = useRef<string | null>(null);
+  // Firestore listener for live handoff — watches messages array for new human replies
+  const seenMessageCountRef = useRef<number>(0);
   useEffect(() => {
     if (!isWaitingForHuman || !sessionId) return;
+
     const unsubscribe = onSnapshot(doc(db, "chats", sessionId), (snap) => {
       const data = snap.data();
-      if (!data?.handoff) return;
-      const reply = data.handoff.lastReply;
-      if (reply && reply !== lastReplyRef.current) {
-        lastReplyRef.current = reply;
-        setDisplayMessages(prev => [...prev, {
-          text: reply,
-          sender: "human",
-        }]);
-        setHistory(prev => [
-          ...prev,
-          { role: "model", parts: [{ text: reply }] },
-        ]);
+      if (!data) return;
+
+      const msgs: Array<{ role: string; parts: { text: string }[]; sender?: string }> =
+        data.messages ?? [];
+
+      // Find human-sent messages we haven't shown yet
+      const humanMsgs = msgs.filter((m) => m.sender === "human");
+      const newHumanMsgs = humanMsgs.slice(seenMessageCountRef.current);
+
+      if (newHumanMsgs.length > 0) {
+        seenMessageCountRef.current = humanMsgs.length;
+
+        // Hide the waiting indicator on first reply
+        setIsWaitingForHuman(false);
+
+        newHumanMsgs.forEach((m) => {
+          const text = m.parts?.[0]?.text ?? "";
+          if (!text) return;
+          setDisplayMessages((prev) => [...prev, { text, sender: "human" }]);
+          setHistory((prev) => [
+            ...prev,
+            { role: "model", parts: [{ text }] },
+          ]);
+        });
       }
     });
+
     return () => unsubscribe();
   }, [isWaitingForHuman, sessionId]);
 
@@ -237,6 +251,11 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
             }
           } else if (parsed.type === "handoff_initiated") {
             setIsWaitingForHuman(true);
+            // Add a system announcement that Efe has joined
+            setDisplayMessages((prev) => [
+              ...prev,
+              { text: "__handoff_join__", sender: "human" },
+            ]);
           } else if (parsed.type === "live_relayed") {
             // Message was relayed to Telegram in live mode, nothing to show
           } else if (parsed.type === "done") {
@@ -305,7 +324,13 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                     <Avatar size="s" src={msg.sender !== "user" ? avatarUrl : undefined} />
                   </div>
                   <div className={`${styles.bubble} ${msg.sender === "user" ? styles.bubbleUser : msg.sender === "human" ? styles.bubbleHuman : styles.bubbleAi}`}>
-                    <ChatMessageContent content={msg.text} />
+                    {msg.sender === "human" && msg.text === "__handoff_join__" ? (
+                      <Text variant="body-default-s" style={{ color: "#22c55e", fontStyle: "italic" }}>
+                        ✅ Efe konuşmaya katıldı — sorularınızı yanıtlayacak.
+                      </Text>
+                    ) : (
+                      <ChatMessageContent content={msg.text} />
+                    )}
                   </div>
                 </div>
               ))}

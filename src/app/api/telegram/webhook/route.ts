@@ -33,21 +33,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Strategy 2: If no reply match, find the most recent live session
+    // Strategy 2: Find the most recent live session — avoid orderBy to skip composite index requirement
     if (!sessionId) {
       const snap = await db
         .collection("handoffSessions")
         .where("status", "==", "live")
-        .orderBy("requestedAt", "desc")
-        .limit(1)
         .get();
 
       if (!snap.empty) {
-        sessionId = snap.docs[0].data().sessionId;
+        // Sort in memory by requestedAt descending
+        const sorted = snap.docs.sort((a, b) => {
+          const aTime = a.data().requestedAt ?? "";
+          const bTime = b.data().requestedAt ?? "";
+          return bTime.localeCompare(aTime);
+        });
+        sessionId = sorted[0].data().sessionId;
       }
     }
 
-    if (!sessionId) return NextResponse.json({ ok: true });
+    if (!sessionId) {
+      console.warn("[Telegram Webhook] No live session found for reply");
+      return NextResponse.json({ ok: true });
+    }
+
+    const now = new Date().toISOString();
 
     // Write Efe's reply to the chat session
     await db.collection("chats").doc(sessionId).set(
@@ -55,9 +64,12 @@ export async function POST(req: NextRequest) {
         messages: FieldValue.arrayUnion({
           role: "model",
           parts: [{ text: replyText }],
+          sender: "human",          // mark as human so client can style it
+          sentAt: now,
         }),
         handoff: {
-          lastReplyAt: new Date().toISOString(),
+          status: "live",
+          lastReplyAt: now,
           lastReply: replyText,
         },
         updatedAt: FieldValue.serverTimestamp(),
@@ -65,6 +77,7 @@ export async function POST(req: NextRequest) {
       { merge: true }
     );
 
+    console.log(`[Telegram Webhook] Reply delivered to session ${sessionId}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[Telegram Webhook] Error:", err);
