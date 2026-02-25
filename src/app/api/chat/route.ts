@@ -7,6 +7,24 @@ import { Resend } from 'resend';
 import { ContactEmailTemplate } from '@/components/email/ContactEmailTemplate';
 import { sendTelegramMessage } from "@/lib/telegram";
 
+// ── Random session names for Telegram identification ─────────────────────────
+const SESSION_NAMES = [
+  "Yıldız", "Bulut", "Deniz", "Rüzgar", "Güneş", "Ay", "Kardelen", "Fırtına",
+  "Atlas", "Orkide", "Lale", "Zeytin", "Mercan", "Nehir", "Kumsal", "Papatya",
+  "Gökkuşağı", "Amber", "Defne", "Kıvılcım", "Safir", "Okyanus", "Yağmur", "Çınar",
+  "Gölge", "Alev", "Duman", "Bora", "Irmak", "Çiçek", "Toprak", "Şafak",
+];
+
+function getSessionName(sessionId: string): string {
+  // Deterministic hash from sessionId → consistent name per session
+  let hash = 0;
+  for (let i = 0; i < sessionId.length; i++) {
+    hash = ((hash << 5) - hash + sessionId.charCodeAt(i)) | 0;
+  }
+  return SESSION_NAMES[Math.abs(hash) % SESSION_NAMES.length];
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ── Simple in-memory rate limiter ──────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 20;       // max requests
@@ -223,7 +241,8 @@ export async function POST(req: NextRequest) {
 
         if (existingHandoff?.status === "live") {
           // Live mode: relay user message to Telegram, skip AI entirely
-          const telegramText = `👤 Kullanıcı: ${prompt}`;
+          const name = getSessionName(sessionId);
+          const telegramText = `👤 ${name}: ${prompt}`;
           const relayedMsgId = await sendTelegramMessage(telegramText, existingHandoff.telegramMessageId ?? undefined);
 
           // Register this new message ID so Efe can reply to it and still hit the right session
@@ -254,13 +273,14 @@ export async function POST(req: NextRequest) {
 
         // ── [0.5] Manual live chat request ──────────────────────────────
         if (forceHandoff) {
+          const name = getSessionName(sessionId);
           const recentContext = (history as HistoryMessage[])
             .slice(-6)
             .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
             .join("\n");
 
           const telegramText = [
-            `🔔 Kullanici canli sohbet istedi!\n`,
+            `🔔 ${name} canli sohbet istedi!\n`,
             recentContext ? `Son mesajlar:\n${recentContext}\n` : "",
             `Yanitla -> kullaniciya iletilecek.`,
           ].filter(Boolean).join("\n");
@@ -322,13 +342,14 @@ export async function POST(req: NextRequest) {
           // ── Human Handoff: Telegram notification & go live ──────────
           if (unknownInfo.confidence >= 75) {
             if (!existingHandoff || existingHandoff.status !== "live") {
+              const name = getSessionName(sessionId);
               const recentContext = (history as HistoryMessage[])
                 .slice(-6)
                 .map((m: HistoryMessage) => `${m.role === "user" ? "👤" : "🤖"}: ${m.parts[0]?.text?.slice(0, 200)}`)
                 .join("\n");
 
               const telegramText = [
-                `🔔 Canli sohbet basladi!\n`,
+                `🔔 ${name} canli sohbet basladi!\n`,
                 `Soru: "${prompt}"\n`,
                 recentContext ? `Son mesajlar:\n${recentContext}\n` : "",
                 `Yanitla -> kullaniciya iletilecek.`,

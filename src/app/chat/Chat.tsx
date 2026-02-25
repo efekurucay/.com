@@ -394,7 +394,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   <div className={`${styles.bubble} ${msg.sender === "user" ? styles.bubbleUser : msg.sender === "human" ? styles.bubbleHuman : styles.bubbleAi}`}>
                     {msg.sender === "human" && msg.text === "__handoff_join__" ? (
                       <Text variant="body-default-s" style={{ color: "#22c55e", fontStyle: "italic" }}>
-                        ✅ Efe konuşmaya katıldı — sorularınızı yanıtlayacak.
+                        Efe konuşmaya katıldı — sorularınızı yanıtlayacak.
                       </Text>
                     ) : (
                       <ChatMessageContent content={msg.text} />
@@ -415,7 +415,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
                   <span>Efe ile canlı sohbete geçmek ister misiniz?</span>
                   <div className={styles.liveChatPromptActions}>
                     <button className={styles.liveChatPromptYes} onClick={handleStartLiveChat}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
                       Evet, bağlan
                     </button>
                     <button className={styles.liveChatPromptNo} onClick={() => setLiveChatDismissed(true)}>
@@ -502,7 +502,7 @@ function ChatInner({ avatarUrl }: { avatarUrl: string }) {
           disabled={isLiveHandoff || isDisabled}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.5 3.44 1.36 4.86L2.1 21.3a.75.75 0 0 0 .9.9l4.44-1.26A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.5 3.44 1.36 4.86L2.1 21.3a.75.75 0 0 0 .9.9l4.44-1.26A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" />
           </svg>
           {isLiveHandoff ? "Canlı sohbet aktif" : "Live Chat with Efe"}
         </button>
