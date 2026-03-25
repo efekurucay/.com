@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { addDocument, updateDocument, deleteDocument } from "@/lib/firestoreClient";
 import { Column, Flex, Heading, Text, Input, Textarea, Switch, Button, IconButton, Spinner, SegmentedControl } from "@/once-ui/components";
@@ -44,6 +44,28 @@ export default function AdminExperiencesPage() {
         setEditingId(null);
     };
     const handleDelete = async (id: string) => { if (confirm("Delete?")) await deleteDocument("experiences", id); };
+    const handleMove = async (id: string, direction: "up" | "down") => {
+        const index = filtered.findIndex((item) => item.id === id);
+        if (index === -1) return;
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= filtered.length) return;
+
+        const currentItem = filtered[index];
+        const targetItem = filtered[targetIndex];
+
+        await runTransaction(db, async (transaction) => {
+            const currentRef = doc(db, "experiences", currentItem.id);
+            const targetRef = doc(db, "experiences", targetItem.id);
+            transaction.update(currentRef, { order: targetItem.order });
+            transaction.update(targetRef, { order: currentItem.order });
+        });
+
+        setItems((prev) => prev.map((item) => {
+            if (item.id === currentItem.id) return { ...item, order: targetItem.order };
+            if (item.id === targetItem.id) return { ...item, order: currentItem.order };
+            return item;
+        }).sort((a, b) => a.order - b.order));
+    };
 
     if (!loaded) return <Flex fillWidth paddingY="128" horizontal="center"><Spinner /></Flex>;
 
@@ -64,7 +86,7 @@ export default function AdminExperiencesPage() {
             </Flex>
 
             <Column gap="8">
-                {filtered.map((item) => (
+                {filtered.map((item, index) => (
                     <Column key={item.id} padding="m" radius="l" border="neutral-medium" background="surface" gap="m">
                         {editingId === item.id ? (
                             <>
@@ -101,6 +123,22 @@ export default function AdminExperiencesPage() {
                                     <Text variant="body-default-s" onBackground="neutral-weak">{item.role} · {item.timeframe}</Text>
                                 </Column>
                                 <Flex gap="4">
+                                    <IconButton
+                                        icon="chevronUp"
+                                        variant="secondary"
+                                        size="s"
+                                        onClick={() => handleMove(item.id, "up")}
+                                        disabled={index === 0}
+                                        tooltip="Move up"
+                                    />
+                                    <IconButton
+                                        icon="chevronDown"
+                                        variant="secondary"
+                                        size="s"
+                                        onClick={() => handleMove(item.id, "down")}
+                                        disabled={index === filtered.length - 1}
+                                        tooltip="Move down"
+                                    />
                                     <IconButton icon="edit" variant="secondary" size="s" onClick={() => startEdit(item)} tooltip="Edit" />
                                     <IconButton icon="close" variant="danger" size="s" onClick={() => handleDelete(item.id)} tooltip="Delete" />
                                 </Flex>

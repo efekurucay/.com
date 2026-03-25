@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { addDocument, updateDocument, deleteDocument } from "@/lib/firestoreClient";
 import { Column, Flex, Heading, Text, Input, Button, IconButton, Spinner } from "@/once-ui/components";
@@ -32,6 +32,28 @@ export default function AdminCertificationsPage() {
         setEditingId(null);
     };
     const handleDelete = async (id: string) => { if (confirm("Delete?")) await deleteDocument("certifications", id); };
+    const handleMove = async (id: string, direction: "up" | "down") => {
+        const index = items.findIndex((item) => item.id === id);
+        if (index === -1) return;
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= items.length) return;
+
+        const currentItem = items[index];
+        const targetItem = items[targetIndex];
+
+        await runTransaction(db, async (transaction) => {
+            const currentRef = doc(db, "certifications", currentItem.id);
+            const targetRef = doc(db, "certifications", targetItem.id);
+            transaction.update(currentRef, { order: targetItem.order });
+            transaction.update(targetRef, { order: currentItem.order });
+        });
+
+        setItems((prev) => prev.map((item) => {
+            if (item.id === currentItem.id) return { ...item, order: targetItem.order };
+            if (item.id === targetItem.id) return { ...item, order: currentItem.order };
+            return item;
+        }).sort((a, b) => a.order - b.order));
+    };
 
     if (!loaded) return <Flex fillWidth paddingY="128" horizontal="center"><Spinner /></Flex>;
 
@@ -42,7 +64,7 @@ export default function AdminCertificationsPage() {
                 <Button variant="secondary" size="s" label="+ Add" onClick={handleAdd} />
             </Flex>
             <Column gap="8">
-                {items.map((item) => (
+                {items.map((item, index) => (
                     <Column key={item.id} padding="m" radius="l" border="neutral-medium" background="surface" gap="m">
                         {editingId === item.id ? (
                             <>
@@ -62,6 +84,22 @@ export default function AdminCertificationsPage() {
                                     <Text variant="body-default-s" onBackground="neutral-weak">{item.role}</Text>
                                 </Column>
                                 <Flex gap="4">
+                                    <IconButton
+                                        icon="chevronUp"
+                                        variant="secondary"
+                                        size="s"
+                                        onClick={() => handleMove(item.id, "up")}
+                                        disabled={index === 0}
+                                        tooltip="Move up"
+                                    />
+                                    <IconButton
+                                        icon="chevronDown"
+                                        variant="secondary"
+                                        size="s"
+                                        onClick={() => handleMove(item.id, "down")}
+                                        disabled={index === items.length - 1}
+                                        tooltip="Move down"
+                                    />
                                     <IconButton icon="edit" variant="secondary" size="s" onClick={() => startEdit(item)} tooltip="Edit" />
                                     <IconButton icon="close" variant="danger" size="s" onClick={() => handleDelete(item.id)} tooltip="Delete" />
                                 </Flex>
