@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { addDocument, updateDocument, deleteDocument } from "@/lib/firestoreClient";
 import { Column, Flex, Heading, Text, Input, Textarea, Switch, Button, IconButton, Spinner, SegmentedControl } from "@/once-ui/components";
@@ -53,10 +53,18 @@ export default function AdminExperiencesPage() {
         const currentItem = filtered[index];
         const targetItem = filtered[targetIndex];
 
-        await Promise.all([
-            updateDocument("experiences", currentItem.id, { order: targetItem.order }),
-            updateDocument("experiences", targetItem.id, { order: currentItem.order }),
-        ]);
+        await runTransaction(db, async (transaction) => {
+            const currentRef = doc(db, "experiences", currentItem.id);
+            const targetRef = doc(db, "experiences", targetItem.id);
+            transaction.update(currentRef, { order: targetItem.order });
+            transaction.update(targetRef, { order: currentItem.order });
+        });
+
+        setItems((prev) => prev.map((item) => {
+            if (item.id === currentItem.id) return { ...item, order: targetItem.order };
+            if (item.id === targetItem.id) return { ...item, order: currentItem.order };
+            return item;
+        }).sort((a, b) => a.order - b.order));
     };
 
     if (!loaded) return <Flex fillWidth paddingY="128" horizontal="center"><Spinner /></Flex>;
